@@ -1,0 +1,62 @@
+@import 'tailwindcss';
+
+/* shadcn-svelte CSS variables → EFT palette */
+:root {
+	--background: #0d0d0a;
+	--foreground: #959595;
+	--card: #161610;
+	--card-foreground: #959595;
+	--popover: #161610;
+	--popover-foreground: #959595;
+	--primary: #e9e9e9;
+	--primary-foreground: #0d0d0a;
+	--secondary: #1e1e16;
+	--secondary-foreground: #959595;
+	--muted: #1e1e16;
+	--muted-foreground: #7a7260;
+	--accent: #1e1e16;
+	--accent-foreground: #e9e9e9;
+	--destructive: #8b2020;
+	--destructive-foreground: #e9e9e9;
+	--border: #2e2d1e;
+	--input: #2e2d1e;
+	--ring: #e9e9e9;
+	--radius: 0.5rem;
+}
+
+@theme {
+	--color-eft-bg:        #0d0d0a;
+	--color-eft-surface:   #161610;
+	--color-eft-elevated:  #1e1e16;
+	--color-eft-border:    #2e2d1e;
+	--color-eft-border-hi: #4a4830;
+	--color-eft-border-yel: #c79c05;
+	--color-eft-gold:      #e9e9e9;
+	--color-eft-gold-dim:  #28587a;
+	--color-eft-gold-tracer:  #3cbd36;
+	--color-eft-text:      #959595;
+	--color-eft-muted:     #7a7260;
+	--color-eft-danger:    #8b2020;
+	--color-eft-danger-hi: #c0392b;
+
+	/* shadcn → tailwind bridge */
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--radius: 0.5rem;
+}

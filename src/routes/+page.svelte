@@ -1,0 +1,43 @@
+<div class="flex h-full items-center justify-center overflow-y-auto p-8">
+	<div class="grid grid-cols-2 gap-6 sm:grid-cols-4">
+		<a
+			href="/balls"
+			class="group flex h-48 w-48 flex-col items-center justify-center gap-4 rounded-2xl border border-eft-border bg-eft-surface transition-colors hover:border-eft-gold hover:bg-eft-elevated"
+		>
+			<img src="/ball_icons.png" alt="Пополнить БК" class="h-30 w-100% object-contain" />
+			<span class="text-sm font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold">
+				Пополнить БК
+			</span>
+		</a>
+
+		<a
+			href="/flea"
+			class="group flex h-48 w-48 flex-col items-center justify-center gap-4 rounded-2xl border border-eft-border bg-eft-surface transition-colors hover:border-eft-gold hover:bg-eft-elevated"
+		>
+			<img src="/sells.png" alt="Барахолка" class="h-30 w-100% object-contain" />
+			<span class="text-sm font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold">
+				Барахолка
+			</span>
+		</a>
+
+		<a
+			href="/events"
+			class="group flex h-48 w-48 flex-col items-center justify-center gap-4 rounded-2xl border border-eft-border bg-eft-surface transition-colors hover:border-eft-gold hover:bg-eft-elevated"
+		>
+			<img src="/versus.png" alt="Ивенты" class="h-30 w-100% object-contain" />
+			<span class="text-sm font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold">
+				Ивенты
+			</span>
+		</a>
+
+		<a
+			href="/calc"
+			class="group flex h-48 w-48 flex-col items-center justify-center gap-4 rounded-2xl border border-eft-border bg-eft-surface transition-colors hover:border-eft-gold hover:bg-eft-elevated"
+		>
+			<span class="text-5xl">⚡</span>
+			<span class="text-sm font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold">
+				Калькулятор
+			</span>
+		</a>
+	</div>
+</div>

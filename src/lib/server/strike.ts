@@ -55,6 +55,8 @@ function parsePage(html: string): Product[] {
 		const price = parseFloat(priceMatch[1]);
 		if (!price) continue;
 
+		if (/OutOfStock|нет в наличии|нет на складе|not-available/i.test(blk)) continue;
+
 		const name = nameMatch[1].replace(/&amp;/g, '&').replace(/&quot;/g, '"').trim();
 		const lower = name.toLowerCase();
 		if (SKIP_WORDS.some((w) => lower.includes(w))) continue;

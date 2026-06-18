@@ -41,9 +41,9 @@ export async function fetchPentagonProducts(): Promise<Product[]> {
 		const name = imgSrcMatch[2].replace(/&amp;/g, '&').trim();
 
 		if (!isBall(name)) continue;
+		if (/нет на складе|OutOfStock|out.of.stock/i.test(b)) continue;
 
 		const price = priceMatch ? parseFloat(priceMatch[1]) : null;
-		// Skip items with no price or price=0 (out of stock / unlisted)
 		if (!price) continue;
 
 		const weightMatch = name.match(/0[,.](\d+)/);

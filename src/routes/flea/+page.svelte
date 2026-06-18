@@ -9,6 +9,14 @@
 
 	let { data }: { data: PageData } = $props();
 
+	type ListingsResult = { listings: Listing[]; nextToken: string | null; total: number };
+	let listingsData = $state<ListingsResult | null>(null);
+
+	$effect(() => {
+		listingsData = null;
+		void data.listings.then((r) => { listingsData = r; });
+	});
+
 	let pendingQuery = $state<string | null>(null);
 
 	$effect(() => {
@@ -16,14 +24,12 @@
 	});
 
 	let viewMode = $state<'grid' | 'list'>('grid');
-	let categoryFilter = $state<'all'>('all');
 	let sourceFilter = $state<'all' | 'kufar' | 'vk'>('all');
 	let currentPage = $state(1);
 	const PAGE_SIZE = 15;
 
 	const allDisplayed = $derived(
-		data.listings.filter((l: Listing) => {
-			if (categoryFilter !== 'all' && l.category !== categoryFilter) return false;
+		(listingsData?.listings ?? []).filter((l: Listing) => {
 			if (sourceFilter !== 'all' && l.source !== sourceFilter) return false;
 			return true;
 		})
@@ -101,7 +107,11 @@
 
 		<div class="flex items-center gap-3">
 			<span class="text-xs text-eft-muted">
-				{allDisplayed.length} / <span class="text-eft-text">{data.total}</span>
+				{#if listingsData}
+					{allDisplayed.length} / <span class="text-eft-text">{listingsData.total}</span>
+				{:else}
+					<span class="inline-block h-3 w-16 rounded bg-eft-elevated animate-pulse"></span>
+				{/if}
 			</span>
 			<div class="flex border border-eft-border">
 				<Button onclick={() => (viewMode = 'grid')} variant={viewMode === 'grid' ? 'active' : 'ghost'} size="icon" title="Сетка">
@@ -120,8 +130,23 @@
 		</div>
 	</div>
 
+	<!-- Loading skeleton -->
+	{#if !listingsData}
+		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+			{#each Array(10) as _}
+				<div class="rounded-xl border border-eft-border bg-eft-surface overflow-hidden animate-pulse">
+					<div class="aspect-square bg-eft-elevated"></div>
+					<div class="p-2 space-y-1.5">
+						<div class="h-3 w-full rounded bg-eft-elevated"></div>
+						<div class="h-3 w-2/3 rounded bg-eft-elevated"></div>
+						<div class="h-4 w-16 rounded bg-eft-elevated mt-1"></div>
+					</div>
+				</div>
+			{/each}
+		</div>
+
 	<!-- Grid view -->
-	{#if viewMode === 'grid'}
+	{:else if viewMode === 'grid'}
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 			{#each displayed as item (item.id)}
 				<a href={item.url} target="_blank" rel="noopener noreferrer"
@@ -185,11 +210,11 @@
 		</div>
 	{/if}
 
-	{#if allDisplayed.length === 0}
+	{#if listingsData && allDisplayed.length === 0}
 		<div class="py-16 text-center text-sm text-eft-muted">Объявлений не найдено</div>
-	{:else if totalPages > 1 || data.nextToken}
+	{:else if listingsData && (totalPages > 1 || listingsData.nextToken)}
 		<div class="mt-2 flex items-center justify-between text-sm text-eft-muted">
-			<span>{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, allDisplayed.length)} из {data.total}</span>
+			<span>{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, allDisplayed.length)} из {listingsData.total}</span>
 			<div class="flex items-center gap-0.5">
 				<button onclick={() => (currentPage = 1)} disabled={currentPage === 1}
 					class="px-2 py-1 transition-colors disabled:opacity-30 hover:enabled:text-eft-text">«</button>
@@ -206,11 +231,11 @@
 					{/if}
 				{/each}
 
-				<button onclick={() => (currentPage += 1)} disabled={currentPage === totalPages && !data.nextToken}
+				<button onclick={() => (currentPage += 1)} disabled={currentPage === totalPages && !listingsData.nextToken}
 					class="px-2 py-1 transition-colors disabled:opacity-30 hover:enabled:text-eft-text">›</button>
 
-				{#if currentPage === totalPages && data.nextToken}
-					<a href="/flea?q={encodeURIComponent(data.query)}&rgn={data.region}&cursor={encodeURIComponent(data.nextToken)}"
+				{#if currentPage === totalPages && listingsData.nextToken}
+					<a href="/flea?q={encodeURIComponent(data.query)}&rgn={data.region}&cursor={encodeURIComponent(listingsData.nextToken)}"
 						class="px-2 py-1 transition-colors hover:text-eft-text" title="Загрузить следующую страницу">»</a>
 				{:else}
 					<button onclick={() => (currentPage = totalPages)} disabled={currentPage === totalPages}

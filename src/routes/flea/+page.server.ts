@@ -158,17 +158,21 @@ async function fetchVkListings(count = 50): Promise<Listing[]> {
 	});
 }
 
-export const load: PageServerLoad = async ({ url }) => {
+type ListingsResult = { listings: Listing[]; nextToken: string | null; total: number };
+
+export const load: PageServerLoad = ({ url }) => {
 	const query = url.searchParams.get('q') ?? 'страйкбол';
 	const region = url.searchParams.get('rgn') ?? '';
 	const cursor = url.searchParams.get('cursor') ?? null;
 
-	const [{ listings: kufarListings, nextToken, total }, vkListings] = await Promise.all([
+	const listings: Promise<ListingsResult> = Promise.all([
 		fetchKufarListings(query, region, cursor),
 		fetchVkListings(),
-	]);
+	]).then(([kufar, vkListings]) => ({
+		listings: [...kufar.listings, ...vkListings],
+		nextToken: kufar.nextToken,
+		total: kufar.total + vkListings.length,
+	}));
 
-	const listings = [...kufarListings, ...vkListings];
-
-	return { listings, nextToken, total, query, region, presets: PRESET_QUERIES, regions: REGIONS };
+	return { query, region, presets: PRESET_QUERIES, regions: REGIONS, listings };
 };

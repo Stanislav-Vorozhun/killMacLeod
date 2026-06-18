@@ -1,11 +1,18 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { VkPost, WeatherDay } from './+page.server';
+	import type { VkPost, WeatherDay, EventsData } from './+page.server';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Separator } from '$lib/components/ui/separator';
 
 	let { data }: { data: PageData } = $props();
+
+	let eventsData = $state<EventsData | null>(null);
+
+	$effect(() => {
+		eventsData = null;
+		void data.eventsData.then((d) => { eventsData = d; });
+	});
 
 	const today = new Date();
 	const todayIso = toIso(today);
@@ -47,7 +54,7 @@
 	};
 
 	const filteredPosts = $derived(
-		(data.posts as VkPost[]).filter((p) => sourceFilter === 'all' || p.source === sourceFilter)
+		(eventsData?.posts ?? []).filter((p) => sourceFilter === 'all' || p.source === sourceFilter)
 	);
 
 	const postsByDate = $derived(
@@ -59,7 +66,7 @@
 		}, {})
 	);
 
-	const weather = $derived(data.weather as Record<string, WeatherDay>);
+	const weather = $derived((eventsData?.weather ?? {}) as Record<string, WeatherDay>);
 
 	// Пн=0 … Вс=6
 	function dayOfWeekMon(d: Date) {
@@ -301,6 +308,20 @@
 				<p class="mt-2 text-xs text-eft-muted">
 					Добавь <code class="text-eft-text">VK_SERVICE_TOKEN=...</code> в файл <code class="text-eft-text">.env</code>
 				</p>
+			</div>
+		{:else if !eventsData}
+			<!-- Skeleton calendar -->
+			<div class="shrink-0 grid grid-cols-7 border border-b-0 border-eft-border">
+				{#each ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'] as d}
+					<div class="py-2 text-center text-xs font-bold uppercase tracking-widest text-eft-muted">{d}</div>
+				{/each}
+			</div>
+			<div class="shrink-0 overflow-hidden rounded-b-xl border border-eft-border grid grid-cols-7 animate-pulse" style="grid-template-rows: repeat(6, minmax(5rem, 1fr))">
+				{#each Array(42) as _}
+					<div class="border-r border-b border-eft-border bg-eft-bg p-2">
+						<div class="h-5 w-5 rounded-full bg-eft-elevated"></div>
+					</div>
+				{/each}
 			</div>
 		{:else}
 			<!-- Calendar section — scrollable if screen too small -->

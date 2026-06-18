@@ -166,27 +166,28 @@ async function fetchWeather(startDate: string, endDate: string): Promise<Record<
 	}
 }
 
-export const load: PageServerLoad = async () => {
+export type EventsData = { posts: VkPost[]; weather: Record<string, WeatherDay> };
+
+export const load: PageServerLoad = () => {
 	const hasToken = !!(VK_SERVICE_TOKEN && VK_SERVICE_TOKEN !== 'your_token_here');
 
-	const allPosts = await Promise.all(
-		SOURCES.map(({ domain, source }) => fetchWallPosts(domain, source))
-	);
-
-	const cutoff = new Date();
-	cutoff.setDate(cutoff.getDate() - 7);
-	const cutoffIso = localIso(cutoff);
-
-	const posts = allPosts
-		.flat()
-		.filter((p) => p.parsedDate !== null && p.parsedDate >= cutoffIso)
-		.sort((a, b) => (a.parsedDate ?? '').localeCompare(b.parsedDate ?? ''));
-
-	// Fetch 16 days of weather starting today (Open-Meteo free limit)
 	const today = new Date();
 	const startDate = localIso(today);
 	const endDate = localIso(new Date(today.getTime() + 15 * 86400000));
-	const weather = await fetchWeather(startDate, endDate);
 
-	return { posts, hasToken, weather };
+	const eventsData: Promise<EventsData> = Promise.all([
+		Promise.all(SOURCES.map(({ domain, source }) => fetchWallPosts(domain, source))),
+		fetchWeather(startDate, endDate),
+	]).then(([allPosts, weather]) => {
+		const cutoff = new Date();
+		cutoff.setDate(cutoff.getDate() - 7);
+		const cutoffIso = localIso(cutoff);
+		const posts = allPosts
+			.flat()
+			.filter((p) => p.parsedDate !== null && p.parsedDate >= cutoffIso)
+			.sort((a, b) => (a.parsedDate ?? '').localeCompare(b.parsedDate ?? ''));
+		return { posts, weather };
+	});
+
+	return { hasToken, eventsData };
 };

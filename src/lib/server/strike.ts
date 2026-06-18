@@ -97,19 +97,21 @@ const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 export async function fetchStrikeProducts(): Promise<Product[]> {
 	if (cache && Date.now() < cache.expiresAt) return cache.products;
 
-	const all: Product[] = [];
+	const pages = await Promise.allSettled(
+		Array.from({ length: 10 }, (_, i) => fetchPage(i + 1))
+	);
+
 	const seen = new Set<number>();
+	const all: Product[] = [];
 
-	for (let page = 1; page <= 10; page++) {
-		const html = await fetchPage(page);
-		const products = parsePage(html);
-		const fresh = products.filter((p) => !seen.has(p.id));
-
-		if (fresh.length === 0) break;
-		fresh.forEach((p) => seen.add(p.id));
-		all.push(...fresh);
-
-		if (products.length < 40) break;
+	for (const result of pages) {
+		if (result.status === 'rejected') continue;
+		for (const p of parsePage(result.value)) {
+			if (!seen.has(p.id)) {
+				seen.add(p.id);
+				all.push(p);
+			}
+		}
 	}
 
 	cache = { products: all, expiresAt: Date.now() + CACHE_TTL_MS };

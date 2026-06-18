@@ -14,20 +14,23 @@ export type Product = {
 	source?: 'strike' | 'pentagon';
 };
 
-export const load: PageServerLoad = async () => {
-	const [strike, pentagon] = await Promise.allSettled([
+export type Catalog = { products: Product[]; brands: string[]; weights: number[] };
+
+export const load: PageServerLoad = () => {
+	const catalog: Promise<Catalog> = Promise.allSettled([
 		fetchStrikeProducts(),
 		fetchPentagonProducts(),
-	]);
+	]).then(([strike, pentagon]) => {
+		const products = [
+			...(strike.status === 'fulfilled' ? strike.value : []),
+			...(pentagon.status === 'fulfilled' ? pentagon.value : []),
+		];
+		const brands = [...new Set(products.map((p) => p.brand))].sort();
+		const weights = [
+			...new Set(products.map((p) => p.weight).filter((w): w is number => w != null)),
+		].sort((a, b) => a - b);
+		return { products, brands, weights };
+	});
 
-	const products = [
-		...(strike.status === 'fulfilled' ? strike.value : []),
-		...(pentagon.status === 'fulfilled' ? pentagon.value : []),
-	];
-	const brands = [...new Set(products.map((p) => p.brand))].sort();
-	const weights = [
-		...new Set(products.map((p) => p.weight).filter((w): w is number => w != null)),
-	].sort((a, b) => a - b);
-
-	return { products, brands, weights };
+	return { catalog };
 };

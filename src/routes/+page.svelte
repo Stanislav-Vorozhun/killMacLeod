@@ -4,7 +4,7 @@
 			href="/balls"
 			class="group flex h-48 w-48 flex-col items-center justify-center gap-4 rounded-2xl border border-eft-border bg-eft-surface transition-colors hover:border-eft-gold hover:bg-eft-elevated"
 		>
-			<img src="/ball_icons.png" alt="Пополнить БК" class="h-30 w-100% object-contain" />
+			<img src="/ball_icons.webp" alt="Пополнить БК" class="h-30 w-100% object-contain" />
 			<span class="text-sm font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold">
 				Пополнить БК
 			</span>
@@ -14,7 +14,7 @@
 			href="/flea"
 			class="group flex h-48 w-48 flex-col items-center justify-center gap-4 rounded-2xl border border-eft-border bg-eft-surface transition-colors hover:border-eft-gold hover:bg-eft-elevated"
 		>
-			<img src="/sells.png" alt="Барахолка" class="h-30 w-100% object-contain" />
+			<img src="/sells.webp" alt="Барахолка" class="h-30 w-100% object-contain" />
 			<span class="text-sm font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold">
 				Барахолка
 			</span>
@@ -24,7 +24,7 @@
 			href="/events"
 			class="group flex h-48 w-48 flex-col items-center justify-center gap-4 rounded-2xl border border-eft-border bg-eft-surface transition-colors hover:border-eft-gold hover:bg-eft-elevated"
 		>
-			<img src="/versus.png" alt="Ивенты" class="h-30 w-100% object-contain" />
+			<img src="/versus.webp" alt="Ивенты" class="h-30 w-100% object-contain" />
 			<span class="text-sm font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold">
 				Ивенты
 			</span>

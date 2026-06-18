@@ -118,13 +118,15 @@ async function fetchWallPosts(domain: string, source: VkPost['source'], count = 
 	if (data.error || !data.response?.items) return [];
 
 	return data.response.items
-		.map((item: { id: number; date: number; text: string }) => {
+		.map((item: { id: number; owner_id: number; date: number; text: string }) => {
 			const { title, gameDate } = parsePost(item.text);
+			// owner_id is negative for groups (e.g. -65529783), so wall${owner_id} → wall-65529783
+			const url = `https://vk.com/${domain}?w=wall${item.owner_id}_${item.id}`;
 			return {
 				id: item.id,
 				date: item.date,
 				text: item.text,
-				url: `https://vk.com/wall-${data.response.groups?.[0]?.id ?? domain}_${item.id}`,
+				url,
 				title,
 				gameDate,
 				parsedDate: parseToIso(gameDate, item.date),

@@ -142,10 +142,6 @@
 
 	function isToday(iso: string) { return iso === todayIso; }
 
-	function truncate(text: string, max = 400) {
-		return text.length > max ? text.slice(0, max).trimEnd() + '…' : text;
-	}
-
 	function weatherIcon(code: number): string {
 		if (code === 0) return '☀️';
 		if (code <= 2) return '🌤️';
@@ -283,10 +279,10 @@
 	</div>
 
 	<!-- MAIN CALENDAR -->
-	<div class="flex min-w-0 flex-1 flex-col overflow-y-scroll p-5">
+	<div class="flex min-w-0 flex-1 flex-col overflow-hidden p-5 gap-4">
 
 		<!-- Header -->
-		<div class="mb-4 flex items-center justify-between">
+		<div class="shrink-0 flex items-center justify-between">
 			<h2 class="text-xl font-bold uppercase tracking-widest text-eft-text">
 				{MONTH_NAMES[viewMonth]} <span class="text-eft-muted font-normal">{viewYear}</span>
 			</h2>
@@ -307,64 +303,68 @@
 				</p>
 			</div>
 		{:else}
-			<!-- Day headers -->
-			<div class="grid grid-cols-7 border border-b-0 border-eft-border">
-				{#each DAY_NAMES as d}
-					<div class="py-2 text-center text-xs font-bold uppercase tracking-widest text-eft-muted
-						{d === 'Вс' ? 'text-rose-400/70' : ''}">{d}</div>
-				{/each}
-			</div>
+			<!-- Calendar section — scrollable if screen too small -->
+			<div class="flex flex-col min-h-0 flex-1 overflow-y-auto">
+				<!-- Day headers -->
+				<div class="grid grid-cols-7 border border-b-0 border-eft-border shrink-0">
+					{#each DAY_NAMES as d}
+						<div class="py-2 text-center text-xs font-bold uppercase tracking-widest text-eft-muted
+							{d === 'Вс' ? 'text-rose-400/70' : ''}">{d}</div>
+					{/each}
+				</div>
 
-			<!-- Calendar grid — фиксированная высота строк -->
-			<div class="overflow-hidden rounded-xl border border-eft-border grid grid-cols-7" style="grid-template-rows: repeat(6, 7rem)">
-				{#each calendarDays() as cell (cell.iso)}
-					{@const posts = postsByDate[cell.iso]}
-					{@const w = weather[cell.iso]}
-					{@const isSelected = !!selected && selected.parsedDate === cell.iso}
-					<button
-						onclick={() => selectPost(posts)}
-						class="relative flex flex-col overflow-hidden border-r border-b border-eft-border bg-eft-bg p-2 text-left transition-colors
-							{!cell.inMonth ? 'opacity-30' : ''}
-							{posts?.length ? 'cursor-pointer hover:bg-eft-elevated' : 'cursor-default'}
-							{isSelected ? 'bg-eft-elevated ring-1 ring-inset ring-eft-gold' : ''}
-						"
-					>
-						<!-- Date + weather row -->
-						<div class="flex items-start justify-between w-full mb-1">
-							<span class="text-xs w-6 h-6 flex items-center justify-center rounded-full shrink-0
-								{isToday(cell.iso) ? 'bg-eft-gold text-black font-bold' : 'text-eft-muted'}"
-							>{cell.date.getDate()}</span>
-							{#if w && cell.inMonth}
-								<div class="flex items-center gap-1 text-xs text-eft-muted/80 leading-none pt-0.5">
-									<span>{weatherIcon(w.code)}</span>
-									<span class="text-xs">{w.tempMax}°/{w.tempMin}°</span>
-								</div>
-							{/if}
-						</div>
-
-						<!-- Event pills -->
-						{#if posts?.length}
-							<div class="flex flex-col gap-0.5 w-full overflow-hidden">
-								{#each posts.slice(0, 2) as post}
-									<span class="block w-full truncate rounded px-1.5 py-0.5 text-xs leading-snug {SOURCE_BG[post.source] ?? 'bg-eft-gold/20 text-eft-gold'}">
-										{post.title ?? SOURCE_LABELS[post.source]}
-									</span>
-								{/each}
-								{#if posts.length > 2}
-									<span class="text-xs text-eft-muted pl-1">+{posts.length - 2} ещё</span>
+				<!-- Calendar grid — фиксированная высота строк -->
+				<div class="shrink-0 overflow-hidden rounded-b-xl border border-eft-border grid grid-cols-7" style="grid-template-rows: repeat(6, minmax(5rem, 1fr))">
+					{#each calendarDays() as cell (cell.iso)}
+						{@const posts = postsByDate[cell.iso]}
+						{@const w = weather[cell.iso]}
+						{@const isSelected = !!selected && selected.parsedDate === cell.iso}
+						<button
+							onclick={() => selectPost(posts)}
+							class="relative flex flex-col overflow-hidden border-r border-b border-eft-border bg-eft-bg p-2 text-left transition-colors
+								{!cell.inMonth ? 'opacity-30' : ''}
+								{posts?.length ? 'cursor-pointer hover:bg-eft-elevated' : 'cursor-default'}
+								{isSelected ? 'bg-eft-elevated ring-1 ring-inset ring-eft-gold' : ''}
+							"
+						>
+							<!-- Date + weather row -->
+							<div class="flex items-start justify-between w-full mb-1">
+								<span class="text-xs w-6 h-6 flex items-center justify-center rounded-full shrink-0
+									{isToday(cell.iso) ? 'bg-eft-gold text-black font-bold' : 'text-eft-muted'}"
+								>{cell.date.getDate()}</span>
+								{#if w && cell.inMonth}
+									<div class="flex items-center gap-1 text-xs text-eft-muted/80 leading-none pt-0.5">
+										<span>{weatherIcon(w.code)}</span>
+										<span class="text-xs">{w.tempMax}°/{w.tempMin}°</span>
+									</div>
 								{/if}
 							</div>
-						{/if}
-					</button>
-				{/each}
+
+							<!-- Event pills -->
+							{#if posts?.length}
+								<div class="flex flex-col gap-0.5 w-full overflow-hidden">
+									{#each posts.slice(0, 2) as post}
+										<span class="block w-full truncate rounded px-1.5 py-0.5 text-xs leading-snug {SOURCE_BG[post.source] ?? 'bg-eft-gold/20 text-eft-gold'}">
+											{post.title ?? SOURCE_LABELS[post.source]}
+										</span>
+									{/each}
+									{#if posts.length > 2}
+										<span class="text-xs text-eft-muted pl-1">+{posts.length - 2} ещё</span>
+									{/if}
+								</div>
+							{/if}
+						</button>
+					{/each}
+				</div>
 			</div>
 
-			<!-- Selected event detail -->
+			<!-- Selected event detail — always visible at bottom, own scroll -->
 			{#if selected}
 				{@const dayPosts = selected.parsedDate ? (postsByDate[selected.parsedDate] ?? []) : []}
-				<div class="mt-4 overflow-hidden rounded-xl border border-eft-border bg-eft-surface">
-					{#if dayPosts.length > 1}
-						<div class="flex border-b border-eft-border">
+				<div class="shrink-0 max-h-64 flex flex-col overflow-hidden rounded-xl border border-eft-border bg-eft-surface">
+					<!-- Tabs + close -->
+					<div class="flex shrink-0 border-b border-eft-border">
+						{#if dayPosts.length > 1}
 							{#each dayPosts as post}
 								<button
 									onclick={() => selected = post}
@@ -372,24 +372,26 @@
 										{selected === post ? 'text-eft-gold border-b-2 border-eft-gold -mb-px bg-eft-elevated' : 'text-eft-muted hover:text-eft-text'}"
 								>{SOURCE_LABELS[post.source]}</button>
 							{/each}
-							<button
-								onclick={() => selected = null}
-								class="ml-auto px-4 py-2 text-sm text-eft-muted hover:text-eft-text transition-colors"
-							>✕</button>
-						</div>
-					{/if}
+						{:else}
+							<span class="px-4 py-2 text-xs uppercase tracking-wider text-eft-muted">
+								{SOURCE_LABELS[selected.source]}
+							</span>
+						{/if}
+						<button
+							onclick={() => selected = null}
+							class="ml-auto px-4 py-2 text-sm text-eft-muted hover:text-eft-text transition-colors"
+						>✕</button>
+					</div>
 
+					<!-- Scrollable body -->
 					<a
 						href={selected.url}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="group flex gap-4 p-4 hover:bg-eft-elevated transition-colors"
+						class="group flex gap-4 overflow-y-auto p-4 hover:bg-eft-elevated transition-colors"
 					>
 						<div class="flex flex-col gap-2 flex-1 min-w-0">
 							<div class="flex items-center gap-3 flex-wrap">
-								<span class="text-xs font-bold uppercase tracking-wider text-eft-muted">
-									{SOURCE_LABELS[selected.source]}
-								</span>
 								{#if selected.gameDate}
 									<span class="text-sm text-eft-gold">📅 {selected.gameDate}</span>
 								{/if}
@@ -399,12 +401,6 @@
 										{weatherIcon(w.code)} {w.tempMax}°/{w.tempMin}°
 									</span>
 								{/if}
-								{#if dayPosts.length <= 1}
-									<button
-										onclick={(e) => { e.preventDefault(); selected = null; }}
-										class="ml-auto text-sm text-eft-muted hover:text-eft-text transition-colors"
-									>✕</button>
-								{/if}
 							</div>
 							{#if selected.title}
 								<p class="text-sm font-semibold text-eft-text group-hover:text-eft-gold transition-colors">
@@ -413,11 +409,11 @@
 							{/if}
 							{#if selected.text}
 								<p class="text-xs leading-relaxed text-eft-muted whitespace-pre-line">
-									{truncate(selected.text)}
+									{selected.text}
 								</p>
 							{/if}
 						</div>
-						<span class="shrink-0 text-xs text-eft-muted/40 self-end">vk.com ↗</span>
+						<span class="shrink-0 text-xs text-eft-muted/40 self-start pt-1">vk.com ↗</span>
 					</a>
 				</div>
 			{/if}

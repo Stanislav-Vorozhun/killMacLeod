@@ -1,5 +1,24 @@
 @import 'tailwindcss';
 
+* {
+	scrollbar-width: thin;
+	scrollbar-color: #4a4830 transparent;
+}
+::-webkit-scrollbar {
+	width: 5px;
+	height: 5px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: #4a4830;
+	border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: #7a7260;
+}
+
 /* shadcn-svelte CSS variables → EFT palette */
 :root {
 	--background: #0d0d0a;

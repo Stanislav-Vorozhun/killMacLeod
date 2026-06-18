@@ -160,7 +160,10 @@ async function fetchVkListings(count = 50): Promise<Listing[]> {
 
 type ListingsResult = { listings: Listing[]; nextToken: string | null; total: number };
 
-export const load: PageServerLoad = ({ url }) => {
+export const load: PageServerLoad = ({ url, setHeaders }) => {
+	// CDN кэш 5 минут (данные более динамичные, чем balls/events)
+	setHeaders({ 'cache-control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=3600' });
+
 	const query = url.searchParams.get('q') ?? 'страйкбол';
 	const region = url.searchParams.get('rgn') ?? '';
 	const cursor = url.searchParams.get('cursor') ?? null;

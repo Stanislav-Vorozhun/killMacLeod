@@ -168,7 +168,10 @@ async function fetchWeather(startDate: string, endDate: string): Promise<Record<
 
 export type EventsData = { posts: VkPost[]; weather: Record<string, WeatherDay> };
 
-export const load: PageServerLoad = () => {
+export const load: PageServerLoad = ({ setHeaders }) => {
+	// CDN кэш 1 час; после истечения — отдаёт stale пока обновляет в фоне
+	setHeaders({ 'cache-control': 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400' });
+
 	const hasToken = !!(VK_SERVICE_TOKEN && VK_SERVICE_TOKEN !== 'your_token_here');
 
 	const today = new Date();

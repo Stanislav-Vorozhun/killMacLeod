@@ -16,7 +16,10 @@ export type Product = {
 
 export type Catalog = { products: Product[]; brands: string[]; weights: number[] };
 
-export const load: PageServerLoad = () => {
+export const load: PageServerLoad = ({ setHeaders }) => {
+	// CDN кэш 1 час; после истечения — отдаёт stale пока обновляет в фоне
+	setHeaders({ 'cache-control': 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400' });
+
 	const catalog: Promise<Catalog> = Promise.allSettled([
 		fetchStrikeProducts(),
 		fetchPentagonProducts(),

@@ -247,6 +247,7 @@
 									href={post.url}
 									target="_blank"
 									rel="noopener noreferrer"
+									data-sveltekit-preload-data="false"
 									class="flex items-start gap-2 group"
 								>
 									<span class="mt-1 h-2 w-2 shrink-0 rounded-full {DOT_COLORS[post.source] ?? 'bg-eft-gold'}"></span>
@@ -409,6 +410,7 @@
 						href={selected.url}
 						target="_blank"
 						rel="noopener noreferrer"
+						data-sveltekit-preload-data="false"
 						class="group flex gap-4 overflow-y-auto p-4 hover:bg-eft-elevated transition-colors"
 					>
 						<div class="flex flex-col gap-2 flex-1 min-w-0">

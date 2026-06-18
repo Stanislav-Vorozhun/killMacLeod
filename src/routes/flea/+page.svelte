@@ -149,7 +149,7 @@
 	{:else if viewMode === 'grid'}
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 			{#each displayed as item (item.id)}
-				<a href={item.url} target="_blank" rel="noopener noreferrer"
+				<a href={item.url} target="_blank" rel="noopener noreferrer" data-sveltekit-preload-data="false"
 					class="group relative flex flex-col rounded-xl border border-eft-border bg-eft-surface transition-colors hover:border-eft-gold"
 				>
 					<span class="absolute right-1.5 top-1.5 z-10 rounded-sm bg-black/50 px-1.5 py-0.5 text-[9px] tracking-wide text-white/40">
@@ -188,7 +188,7 @@
 	{:else}
 		<div class="flex flex-col divide-y divide-eft-border rounded-xl border border-eft-border overflow-hidden">
 			{#each displayed as item (item.id)}
-				<a href={item.url} target="_blank" rel="noopener noreferrer"
+				<a href={item.url} target="_blank" rel="noopener noreferrer" data-sveltekit-preload-data="false"
 					class="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-eft-elevated"
 				>
 					<span class="text-base" title={item.category}>

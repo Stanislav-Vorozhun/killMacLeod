@@ -195,7 +195,7 @@
 		{:else if viewMode === 'grid'}
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 				{#each filtered as product (product.id)}
-					<a href={product.url ?? '#'} target="_blank" rel="noopener noreferrer"
+					<a href={product.url ?? '#'} target="_blank" rel="noopener noreferrer" data-sveltekit-preload-data="false"
 						class="group relative flex flex-col rounded-xl border border-eft-border bg-eft-surface transition-colors hover:border-eft-gold"
 					>
 						{#if product.source === 'pentagon'}
@@ -229,7 +229,7 @@
 		{:else}
 			<div class="flex flex-col rounded-xl border border-eft-border overflow-hidden">
 				{#each filtered as product (product.id)}
-					<a href={product.url ?? '#'} target="_blank" rel="noopener noreferrer"
+					<a href={product.url ?? '#'} target="_blank" rel="noopener noreferrer" data-sveltekit-preload-data="false"
 						class="group flex items-center gap-4 border-b border-eft-border px-4 py-2.5 transition-colors last:border-b-0 hover:bg-eft-elevated"
 					>
 						<div class="flex min-w-0 flex-1 items-center gap-3">

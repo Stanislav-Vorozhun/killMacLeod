@@ -6,7 +6,13 @@
 	let { children } = $props();
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head>
+	<link rel="icon" href={favicon} />
+	<link rel="preload" href="/ball_icons.webp" as="image" type="image/webp" />
+	<link rel="preload" href="/sells.webp" as="image" type="image/webp" />
+	<link rel="preload" href="/versus.webp" as="image" type="image/webp" />
+	<link rel="preload" href="/logo.webp" as="image" type="image/webp" />
+</svelte:head>
 
 {#if navigating.to}
 	<div class="fixed inset-x-0 top-0 z-50 h-[2px] overflow-hidden">

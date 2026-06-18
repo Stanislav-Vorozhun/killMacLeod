@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/state';
+	import { page, navigating } from '$app/state';
 	import type { PageData } from './$types';
 	import type { Listing } from './+page.server';
 	import { Button } from '$lib/components/ui/button';
@@ -8,6 +8,12 @@
 	import { Badge } from '$lib/components/ui/badge';
 
 	let { data }: { data: PageData } = $props();
+
+	let pendingQuery = $state<string | null>(null);
+
+	$effect(() => {
+		if (!navigating.to) pendingQuery = null;
+	});
 
 	let viewMode = $state<'grid' | 'list'>('grid');
 	let categoryFilter = $state<'all'>('all');
@@ -32,6 +38,7 @@
 	});
 
 	function navigate(q: string, rgn?: string) {
+		pendingQuery = q;
 		const params = new URLSearchParams(page.url.searchParams);
 		params.set('q', q);
 		if (rgn !== undefined) params.set('rgn', rgn);
@@ -57,7 +64,13 @@
 			<Button
 				onclick={() => navigate(preset.value)}
 				variant={data.query === preset.value ? 'active' : 'default'}
-			>{preset.label}</Button>
+				disabled={!!navigating.to}
+			>
+				{#if pendingQuery === preset.value}
+					<span class="mr-1.5 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+				{/if}
+				{preset.label}
+			</Button>
 		{/each}
 	</div>
 
@@ -67,6 +80,7 @@
 			<Select
 				label="Город"
 				value={data.region}
+				disabled={!!navigating.to}
 				onchange={(e) => navigate(data.query, (e.target as HTMLSelectElement).value)}
 			>
 				{#each data.regions as r}

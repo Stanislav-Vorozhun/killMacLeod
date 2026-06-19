@@ -21,10 +21,9 @@
 {/if}
 
 <div class="flex h-screen flex-col overflow-hidden bg-eft-bg text-eft-text">
-	<header class="border-b border-eft-border px-6 py-3">
-		<a href="/" class="inline-flex items-center gap-3 transition-opacity hover:opacity-80">
-			<img src="/logo.webp" alt="KillMacLeod" class="h-10 w-auto" />
-			<span class="font-bold tracking-widest text-eft-gold uppercase">KillMacLeod</span>
+	<header class="flex justify-center border-b border-eft-border px-4 py-3 md:justify-start md:px-6">
+		<a href="/" class="inline-flex items-center transition-opacity hover:opacity-80" aria-label="KillMacLeod">
+			<img src="/logo.webp" alt="KillMacLeod" class="h-12 w-auto md:h-10" />
 		</a>
 	</header>
 

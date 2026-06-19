@@ -4,7 +4,7 @@
 	import type { PageData } from './$types';
 	import type { Listing } from './+page.server';
 	import { Button } from '$lib/components/ui/button';
-	import { Select } from '$lib/components/ui/select';
+	import { NativeSelect } from '$lib/components/ui/native-select';
 	import { Badge } from '$lib/components/ui/badge';
 
 	let { data }: { data: PageData } = $props();
@@ -83,16 +83,16 @@
 	<!-- Filters row -->
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div class="flex flex-wrap items-center gap-3">
-			<Select
+			<NativeSelect
 				label="Город"
 				value={data.region}
 				disabled={!!navigating.to}
-				onchange={(e) => navigate(data.query, (e.target as HTMLSelectElement).value)}
+				onchange={(e: Event) => navigate(data.query, (e.target as HTMLSelectElement).value)}
 			>
 				{#each data.regions as r}
 					<option value={r.value}>{r.label}</option>
 				{/each}
-			</Select>
+			</NativeSelect>
 
 			<div class="flex border border-eft-border">
 				{#each ([['all', 'Все'], ['kufar', 'Kufar'], ['vk', 'ВК Барахолка']] as const) as [val, label]}

@@ -6,6 +6,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import SortSelect, { type SortBy as SortByType } from '$lib/components/balls/SortSelect.svelte';
 	import EftSelect, { type EftSelectOption } from '$lib/components/balls/EftSelect.svelte';
+	import WeightChips from '$lib/components/balls/WeightChips.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -226,17 +227,7 @@
 
 		<div>
 			<p class="mb-2 text-[10px] font-bold uppercase tracking-widest text-eft-muted">Вес шара</p>
-			<div class="flex flex-wrap gap-1">
-				{#each catalog.weights as weight}
-					{@const active = weights.includes(weight)}
-					<button
-						onclick={() => onWeight(weight)}
-						class="rounded border px-2 py-0.5 text-xs transition-colors {active ? 'border-eft-gold bg-eft-gold-dim text-eft-gold' : 'border-eft-border-hi text-eft-muted hover:border-eft-gold hover:text-eft-text'}"
-					>
-						{weight}
-					</button>
-				{/each}
-			</div>
+			<WeightChips weights={catalog.weights} selected={weights} onchange={onWeight} />
 		</div>
 
 		<div>

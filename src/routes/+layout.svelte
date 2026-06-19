@@ -22,7 +22,7 @@
 {/if}
 
 <div class="flex h-svh flex-col overflow-hidden bg-eft-bg text-eft-text md:h-screen" ondragstart={(e) => e.target instanceof HTMLImageElement && e.preventDefault()}>
-	<header class="flex shrink-0 justify-center border-b border-eft-border px-4 py-2 md:justify-start md:px-6 md:py-3">
+	<header class="flex shrink-0 justify-center px-4 py-2 md:justify-start md:border-b md:border-eft-border md:px-6 md:py-3">
 		<a href="/" class="inline-flex items-center gap-3 transition-opacity hover:opacity-80" aria-label="KillMacLeod">
 			<img src="/logo.webp" alt="" class="h-10 w-auto md:h-10" />
 			<span class="hidden font-bold uppercase tracking-widest text-eft-gold md:inline">KillMacLeod</span>

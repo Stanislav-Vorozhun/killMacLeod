@@ -461,21 +461,32 @@
 ></div>
 
 <button
-	onclick={openMobileFilters}
-	class="fixed bottom-12 left-1/2 z-40 flex -translate-x-1/2 items-center gap-4 rounded-full border border-eft-border bg-eft-surface px-10 py-4 text-sm font-semibold text-eft-text shadow-[0_4px_24px_rgba(0,0,0,0.45)] transition-colors hover:border-eft-gold md:hidden"
+	onclick={() => (showMobileFilters ? applyMobileFilters() : openMobileFilters())}
+	class="fixed bottom-12 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-4 rounded-full border px-10 py-4 text-sm font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.45)] transition-colors md:hidden
+		{showMobileFilters
+			? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400 hover:bg-emerald-400/20'
+			: 'border-eft-border bg-eft-surface text-eft-text hover:border-eft-gold'}"
 >
-	<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-		<path d="M1 3h14v2L9.5 10v5l-3-1.5V10L1 5V3z"/>
-	</svg>
-	Фильтр
-	{#if activeFilterCount > 0}
-		<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-eft-gold px-1.5 text-[10px] font-bold text-black">
-			{activeFilterCount}
-		</span>
+	{#if showMobileFilters}
+		Применить
+	{:else}
+		<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+			<path d="M1 3h14v2L9.5 10v5l-3-1.5V10L1 5V3z"/>
+		</svg>
+		Фильтр
+		{#if activeFilterCount > 0}
+			<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-eft-gold px-1.5 text-[10px] font-bold text-black">
+				{activeFilterCount}
+			</span>
+		{/if}
 	{/if}
 </button>
 
 {#if showMobileFilters}
+	<div
+		class="pointer-events-none fixed inset-x-0 bottom-0 z-[55] h-28 bg-gradient-to-t from-eft-bg via-eft-bg/90 via-35% to-transparent md:hidden"
+		aria-hidden="true"
+	></div>
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 z-50 bg-black/60 md:hidden"
@@ -491,40 +502,45 @@
 			<div class="flex shrink-0 justify-center pt-2 pb-1">
 				<div class="h-1 w-10 rounded-full bg-eft-border-hi"></div>
 			</div>
-			<div class="flex shrink-0 justify-center border-b border-eft-border px-4 py-3">
+			<div class="flex shrink-0 items-center justify-between border-b border-eft-border px-4 py-3">
+				<span class="w-8" aria-hidden="true"></span>
 				<span class="text-sm font-semibold uppercase tracking-widest text-eft-text">Фильтры</span>
-			</div>
-			<div class="flex-1 space-y-5 overflow-y-auto p-5 pb-8">
-				{@render filterPanel(
-					draftBrand,
-					draftWeights,
-					draftTypeFilter,
-					draftSourceFilter,
-					draftSortBy,
-					(value) => { draftBrand = value; },
-					(weight) => { draftWeights = toggleWeight(draftWeights, weight); },
-					(value) => { draftTypeFilter = value; },
-					(value) => { draftSourceFilter = value; },
-					(value) => { draftSortBy = value; },
-					null
-				)}
-			</div>
-			<div class="relative z-10 shrink-0 space-y-2 border-t border-eft-border bg-eft-bg p-4">
 				<button
+					type="button"
 					onclick={resetDraftFilters}
-					class="w-full rounded-xl border border-rose-400/30 bg-rose-400/10 py-3 text-sm font-bold text-rose-400 transition-all duration-200 hover:bg-rose-400/20
-						{draftHasFilters ? 'pointer-events-auto scale-100 opacity-100' : 'pointer-events-none scale-[0.98] opacity-0'}"
+					disabled={!draftHasFilters}
+					aria-label="Сбросить фильтры"
 					aria-hidden={!draftHasFilters}
 					tabindex={draftHasFilters ? 0 : -1}
+					class="flex h-8 w-8 items-center justify-center rounded-md text-rose-400 transition-all duration-200 hover:bg-rose-400/10 hover:text-rose-300 disabled:pointer-events-none
+						{draftHasFilters ? 'opacity-100' : 'opacity-0'}"
 				>
-					Сбросить
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+						<path d="M3 3v5h5"/>
+					</svg>
 				</button>
-				<button
-					onclick={applyMobileFilters}
-					class="w-full rounded-xl border border-emerald-400/30 bg-emerald-400/10 py-3 text-sm font-bold text-emerald-400 transition-colors hover:bg-emerald-400/20"
-				>
-					Применить
-				</button>
+			</div>
+			<div class="relative flex min-h-0 flex-1 flex-col">
+				<div class="flex-1 space-y-5 overflow-y-auto p-5 pb-40">
+					{@render filterPanel(
+						draftBrand,
+						draftWeights,
+						draftTypeFilter,
+						draftSourceFilter,
+						draftSortBy,
+						(value) => { draftBrand = value; },
+						(weight) => { draftWeights = toggleWeight(draftWeights, weight); },
+						(value) => { draftTypeFilter = value; },
+						(value) => { draftSourceFilter = value; },
+						(value) => { draftSortBy = value; },
+						null
+					)}
+				</div>
+				<div
+					class="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-40 bg-gradient-to-t from-eft-bg via-eft-bg/85 via-55% to-transparent"
+					aria-hidden="true"
+				></div>
 			</div>
 		</div>
 	</div>

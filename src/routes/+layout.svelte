@@ -11,6 +11,7 @@
 	<link rel="preload" href="/ball_icons.webp" as="image" type="image/webp" />
 	<link rel="preload" href="/sells.webp" as="image" type="image/webp" />
 	<link rel="preload" href="/versus.webp" as="image" type="image/webp" />
+	<link rel="preload" href="/calc.webp" as="image" type="image/webp" />
 	<link rel="preload" href="/logo.webp" as="image" type="image/webp" />
 </svelte:head>
 
@@ -20,10 +21,10 @@
 	</div>
 {/if}
 
-<div class="flex h-screen flex-col overflow-hidden bg-eft-bg text-eft-text" ondragstart={(e) => e.target instanceof HTMLImageElement && e.preventDefault()}>
-	<header class="flex justify-center border-b border-eft-border px-4 py-3 md:justify-start md:px-6">
+<div class="flex h-svh flex-col overflow-hidden bg-eft-bg text-eft-text md:h-screen" ondragstart={(e) => e.target instanceof HTMLImageElement && e.preventDefault()}>
+	<header class="flex shrink-0 justify-center border-b border-eft-border px-4 py-2 md:justify-start md:px-6 md:py-3">
 		<a href="/" class="inline-flex items-center gap-3 transition-opacity hover:opacity-80" aria-label="KillMacLeod">
-			<img src="/logo.webp" alt="" class="h-12 w-auto md:h-10" />
+			<img src="/logo.webp" alt="" class="h-10 w-auto md:h-10" />
 			<span class="hidden font-bold uppercase tracking-widest text-eft-gold md:inline">KillMacLeod</span>
 		</a>
 	</header>
@@ -32,7 +33,7 @@
 		{@render children()}
 	</main>
 
-	<footer class="border-t border-eft-border px-6 py-3 text-center text-xs text-eft-muted">
+	<footer class="shrink-0 border-t border-eft-border px-6 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-center text-[10px] text-eft-muted md:py-3 md:text-xs">
 		Только для личного использования
 	</footer>
 </div>

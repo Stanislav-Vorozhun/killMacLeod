@@ -24,6 +24,20 @@ img {
 	user-drag: none;
 }
 
+html,
+body {
+	overflow: hidden;
+	overscroll-behavior: none;
+}
+
+@media (min-width: 768px) {
+	html,
+	body {
+		overflow: auto;
+		overscroll-behavior: auto;
+	}
+}
+
 /* shadcn-svelte CSS variables → EFT palette */
 :root {
 	--background: #0d0d0a;

@@ -20,7 +20,7 @@
 	</div>
 {/if}
 
-<div class="flex h-screen flex-col overflow-hidden bg-eft-bg text-eft-text">
+<div class="flex h-screen flex-col overflow-hidden bg-eft-bg text-eft-text" ondragstart={(e) => e.target instanceof HTMLImageElement && e.preventDefault()}>
 	<header class="flex justify-center border-b border-eft-border px-4 py-3 md:justify-start md:px-6">
 		<a href="/" class="inline-flex items-center transition-opacity hover:opacity-80" aria-label="KillMacLeod">
 			<img src="/logo.webp" alt="KillMacLeod" class="h-12 w-auto md:h-10" />

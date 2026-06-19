@@ -311,7 +311,9 @@
 	</aside>
 
 	<div class="flex min-h-0 flex-1 flex-col overflow-hidden">
-		<div class="flex-1 overflow-y-auto px-3 pt-[15px] pb-24 md:overflow-visible md:p-5 md:pb-5">
+		<div
+			class="flex-1 px-3 pt-[15px] pb-24 md:overflow-visible md:p-5 md:pb-5 {showMobileFilters ? 'max-md:overflow-hidden max-md:overscroll-none' : 'overflow-y-auto'}"
+		>
 			<div class="mb-4 hidden items-center justify-between md:flex">
 				<p class="text-xs text-eft-muted">
 					{#if !catalog}
@@ -489,13 +491,13 @@
 	></div>
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
-		class="fixed inset-0 z-50 bg-black/60 md:hidden"
+		class="fixed inset-0 z-50 touch-none overscroll-none bg-black/60 md:hidden"
 		transition:fade={{ duration: 200 }}
 		onclick={closeMobileFilters}
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<div
-			class="absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-eft-border bg-eft-bg"
+			class="absolute inset-x-0 bottom-0 flex max-h-[85vh] touch-auto flex-col rounded-t-2xl border-t border-eft-border bg-eft-bg"
 			transition:fly={{ y: 320, duration: 280, easing: (t) => 1 - Math.pow(1 - t, 3) }}
 			onclick={(e) => e.stopPropagation()}
 		>

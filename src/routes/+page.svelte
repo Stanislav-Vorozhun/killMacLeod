@@ -1,5 +1,5 @@
 <div class="flex h-full min-h-0 flex-col overflow-hidden p-[10px] md:items-center md:justify-center md:p-8">
-	<div class="grid min-h-0 flex-1 w-full grid-cols-2 grid-rows-2 gap-[10px] md:h-auto md:flex-none md:w-auto md:grid-cols-4 md:grid-rows-none md:gap-6">
+	<div class="grid min-h-0 flex-1 w-full grid-cols-2 grid-rows-[1fr_1fr_1fr] gap-[10px] md:h-auto md:flex-none md:w-auto md:grid-cols-5 md:grid-rows-none md:gap-6">
 		<a
 			href="/balls"
 			class="group flex h-full min-h-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-eft-border bg-eft-surface p-2 transition-colors hover:border-eft-gold hover:bg-eft-elevated md:h-48 md:w-48 md:shrink-0 md:gap-4 md:p-0"
@@ -37,6 +37,16 @@
 			<img src="/calc.webp" alt="Калькулятор" class="min-h-0 w-full flex-1 object-contain md:h-30 md:w-full md:flex-none" />
 			<span class="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold md:text-sm">
 				Калькулятор
+			</span>
+		</a>
+
+		<a
+			href="/pyro"
+			class="col-span-2 justify-self-center w-[calc(50%-5px)] group flex h-full min-h-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-eft-border bg-eft-surface p-2 transition-colors hover:border-eft-gold hover:bg-eft-elevated md:col-span-1 md:justify-self-auto md:w-auto md:h-48 md:w-48 md:shrink-0 md:gap-4 md:p-0"
+		>
+			<img src="/pyro.svg" alt="Пиротехника" class="min-h-0 w-full flex-1 object-contain md:h-30 md:w-full md:flex-none" />
+			<span class="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold md:text-sm">
+				Пиротехника
 			</span>
 		</a>
 	</div>

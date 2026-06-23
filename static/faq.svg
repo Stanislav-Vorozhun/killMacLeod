@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#161610"/>
+  <!-- Body -->
+  <rect x="158" y="78" width="84" height="154" rx="14" fill="#1e1e16" stroke="#4a4830" stroke-width="2.5"/>
+  <!-- Antenna -->
+  <rect x="193" y="42" width="8" height="44" rx="4" fill="#4a4830"/>
+  <!-- Speaker grill -->
+  <rect x="171" y="94" width="58" height="36" rx="6" fill="#161610" stroke="#3a3828" stroke-width="1.5"/>
+  <line x1="177" y1="104" x2="223" y2="104" stroke="#3a3828" stroke-width="1.5"/>
+  <line x1="177" y1="112" x2="223" y2="112" stroke="#3a3828" stroke-width="1.5"/>
+  <line x1="177" y1="120" x2="223" y2="120" stroke="#3a3828" stroke-width="1.5"/>
+  <!-- PTT button -->
+  <rect x="146" y="138" width="14" height="32" rx="5" fill="#4a4830"/>
+  <!-- Screen area -->
+  <rect x="171" y="142" width="58" height="26" rx="4" fill="#0e0e0a" stroke="#3a3828" stroke-width="1.5"/>
+  <rect x="175" y="147" width="22" height="4" rx="2" fill="#4a4830" opacity="0.6"/>
+  <rect x="175" y="154" width="32" height="4" rx="2" fill="#4a4830" opacity="0.4"/>
+  <!-- Keypad dots -->
+  <circle cx="177" cy="183" r="3.5" fill="#3a3828"/>
+  <circle cx="190" cy="183" r="3.5" fill="#3a3828"/>
+  <circle cx="203" cy="183" r="3.5" fill="#3a3828"/>
+  <circle cx="177" cy="197" r="3.5" fill="#3a3828"/>
+  <circle cx="190" cy="197" r="3.5" fill="#3a3828"/>
+  <circle cx="203" cy="197" r="3.5" fill="#3a3828"/>
+  <circle cx="190" cy="211" r="3.5" fill="#4a4830"/>
+  <!-- Signal arcs -->
+  <path d="M252 88 Q264 100 252 112" fill="none" stroke="#7a7260" stroke-width="2" stroke-linecap="round"/>
+  <path d="M260 80 Q277 100 260 120" fill="none" stroke="#7a7260" stroke-width="1.5" stroke-linecap="round" opacity="0.55"/>
+  <path d="M268 72 Q290 100 268 128" fill="none" stroke="#7a7260" stroke-width="1" stroke-linecap="round" opacity="0.25"/>
+  <!-- Glow -->
+  <rect x="158" y="78" width="84" height="154" rx="14" fill="none" stroke="#e9e9e9" stroke-width="0.5" opacity="0.07"/>
+</svg>

@@ -1,9 +1,11 @@
 <script lang="ts">
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import { navigating } from '$app/state';
+	import { navigating, page } from '$app/state';
 
 	let { children } = $props();
+
+	const isHome = $derived(page.url.pathname === '/');
 </script>
 
 <svelte:head>
@@ -22,7 +24,19 @@
 {/if}
 
 <div class="flex h-svh flex-col overflow-hidden bg-eft-bg text-eft-text md:h-screen" ondragstart={(e) => e.target instanceof HTMLImageElement && e.preventDefault()}>
-	<header class="flex shrink-0 justify-center px-4 py-2 md:justify-start md:border-b md:border-eft-border md:px-6 md:py-3">
+	<header class="relative flex shrink-0 items-center justify-center px-4 py-2 md:justify-start md:border-b md:border-eft-border md:px-6 md:py-3">
+		{#if !isHome}
+			<a
+				href="/"
+				aria-label="Назад"
+				class="absolute left-4 flex h-9 w-9 items-center justify-center rounded-lg border border-eft-border text-eft-muted transition-colors hover:border-eft-border-hi hover:text-eft-text md:hidden"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M19 12H5"/>
+					<path d="M12 19l-7-7 7-7"/>
+				</svg>
+			</a>
+		{/if}
 		<a href="/" class="inline-flex items-center gap-3 transition-opacity hover:opacity-80" aria-label="KillMacLeod">
 			<img src="/logo.webp" alt="" class="h-10 w-auto md:h-10" />
 			<span class="hidden font-bold uppercase tracking-widest text-eft-gold md:inline">KillMacLeod</span>

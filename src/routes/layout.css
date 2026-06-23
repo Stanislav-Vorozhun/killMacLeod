@@ -24,17 +24,29 @@ img {
 	user-drag: none;
 }
 
+button {
+	appearance: none;
+	-webkit-appearance: none;
+}
+
 html,
 body {
-	overflow: hidden;
 	overscroll-behavior: none;
 }
 
 @media (min-width: 768px) {
 	html,
 	body {
-		overflow: auto;
 		overscroll-behavior: auto;
+	}
+}
+
+/* Prevent iOS zoom on input focus (triggered when font-size < 16px) */
+@media screen and (max-width: 767px) {
+	input,
+	textarea,
+	select {
+		font-size: max(16px, 1em);
 	}
 }
 

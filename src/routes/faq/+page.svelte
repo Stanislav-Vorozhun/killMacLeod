@@ -291,7 +291,17 @@
 	<div class="flex-1 overflow-y-auto">
 		<div class="max-w-3xl px-8 py-6">
 			<h1 class="mb-1 text-2xl font-bold text-eft-text">Baofeng UV-5R</h1>
-			<p class="mb-8 text-sm text-eft-muted">Справочник по настройкам меню — что значит каждый пункт и что обычно ставят</p>
+			<p class="mb-6 text-sm text-eft-muted">Справочник по настройкам меню — что значит каждый пункт и что обычно ставят</p>
+
+			<div class="mb-8 flex gap-3 rounded-xl border border-yellow-400/50 bg-yellow-400/5 px-4 py-3">
+				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-yellow-400">
+					<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+				</svg>
+				<div>
+					<p class="mb-1 text-xs font-bold text-yellow-400">Внимание</p>
+					<p class="text-xs leading-relaxed text-yellow-400/80">Настраивайте свои радиостанции строго в пределах 446.0 – 446.2 МГц. Выход за рамки этого диапазона расценивается как создание помех для государственных ведомств.</p>
+				</div>
+			</div>
 
 			{#each CATEGORIES as cat}
 				<section id={cat.id} class="mb-10 scroll-mt-6">

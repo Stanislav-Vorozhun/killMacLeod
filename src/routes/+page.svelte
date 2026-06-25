@@ -44,7 +44,7 @@
 			href="/pyro"
 			class="group flex h-full min-h-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-eft-border bg-eft-surface p-2 transition-colors hover:border-eft-gold hover:bg-eft-elevated md:h-48 md:w-48 md:shrink-0 md:gap-4 md:p-0"
 		>
-			<img src="/pyro.svg" alt="Пиротехника" class="min-h-0 w-full flex-1 object-contain md:h-30 md:w-full md:flex-none" />
+			<img src="/frag.webp" alt="Пиротехника" class="min-h-0 w-full flex-1 object-contain md:h-30 md:w-full md:flex-none" />
 			<span class="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold md:text-sm">
 				Пиротехника
 			</span>
@@ -54,7 +54,7 @@
 			href="/faq"
 			class="group flex h-full min-h-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-eft-border bg-eft-surface p-2 transition-colors hover:border-eft-gold hover:bg-eft-elevated md:h-48 md:w-48 md:shrink-0 md:gap-4 md:p-0"
 		>
-			<img src="/faq.svg" alt="Рации" class="min-h-0 w-full flex-1 object-contain md:h-30 md:w-full md:flex-none" />
+			<img src="/radio.webp" alt="Рации" class="min-h-0 w-full flex-1 object-contain md:h-30 md:w-full md:flex-none" />
 			<span class="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-eft-muted transition-colors group-hover:text-eft-gold md:text-sm">
 				Рации
 			</span>

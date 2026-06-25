@@ -14,6 +14,8 @@
 	<link rel="preload" href="/sells.webp" as="image" type="image/webp" />
 	<link rel="preload" href="/versus.webp" as="image" type="image/webp" />
 	<link rel="preload" href="/calc.webp" as="image" type="image/webp" />
+	<link rel="preload" href="/frag.webp" as="image" type="image/webp" />
+	<link rel="preload" href="/radio.webp" as="image" type="image/webp" />
 	<link rel="preload" href="/logo.webp" as="image" type="image/webp" />
 </svelte:head>
 

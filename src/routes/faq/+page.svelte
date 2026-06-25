@@ -104,31 +104,98 @@
 		{ term: 'CTCSS', def: 'Аналоговый тон-пароль — субтональный звуковой сигнал, который незаметно добавляется к передаче. Рация откроет динамик, только если тон совпадает.' },
 		{ term: 'DCS',   def: 'Цифровой пароль — более помехоустойчивый вариант тон-кода. Передаётся как цифровая последовательность.' },
 	];
+
+	const STEPS = [
+		'Нажми кнопку MENU на рации',
+		'Листай стрелками ▲ ▼ — найди нужный пункт по номеру',
+		'Нажми MENU ещё раз — войди в настройку',
+		'Измени значение стрелками ▲ ▼',
+		'Нажми MENU чтобы сохранить, или EXIT — выйти без изменений',
+	];
+
+	const QUICK_START_NUMS = new Set([0, 2, 5, 3, 8]);
+	const QUICK_START = CATEGORIES.flatMap(c => c.settings).filter(s => QUICK_START_NUMS.has(s.num));
+
+	const NAV_ITEMS = [
+		{ id: 'quick-start', label: 'С чего начать' },
+		...CATEGORIES.map(c => ({ id: c.id, label: c.title })),
+		{ id: 'glossary', label: 'Термины' },
+	];
+
+	let showNav = $state(false);
+
+	function navTo(id: string) {
+		showNav = false;
+		setTimeout(() => {
+			document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+		}, 50);
+	}
 </script>
 
 <!-- ───── Mobile ───── -->
 <div class="flex h-full min-h-0 flex-col overflow-hidden md:hidden">
 	<div class="flex-1 space-y-5 overflow-y-auto bg-eft-bg px-4 pt-5 pb-28">
+
+		<!-- Hero -->
+		<div>
+			<div class="mb-2 inline-flex items-center rounded-full border border-eft-gold/30 bg-eft-gold/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-eft-gold">
+				Baofeng UV-5R
+			</div>
+			<h1 class="text-lg font-bold text-eft-text">Справочник по меню</h1>
+			<p class="mt-1 text-sm leading-relaxed text-eft-muted">Что значит каждый пункт меню и что обычно ставят. Подходит для UV-5R и большинства клонов.</p>
+		</div>
+
+		<!-- Как открыть меню -->
+		<div class="rounded-xl border border-eft-border bg-eft-surface p-4">
+			<p class="mb-3 text-[10px] font-bold uppercase tracking-widest text-eft-muted">Как открыть меню</p>
+			<div class="space-y-2.5">
+				{#each STEPS as step, i}
+					<div class="flex items-start gap-3">
+						<span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-eft-elevated text-[10px] font-bold tabular-nums text-eft-muted">{i + 1}</span>
+						<p class="text-sm leading-snug text-eft-text">{step}</p>
+					</div>
+				{/each}
+			</div>
+		</div>
+
+		<!-- С чего начать -->
+		<section id="quick-start">
+			<h2 class="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-eft-muted">С чего начать</h2>
+			<p class="mb-2 text-xs leading-relaxed text-eft-muted">Эти настройки проверь первым делом — они влияют на комфорт в игре.</p>
+			<div class="overflow-hidden rounded-xl border border-eft-gold/25 bg-eft-gold/5">
+				{#each QUICK_START as s}
+					<div class="border-b border-eft-gold/15 px-4 py-3 last:border-b-0">
+						<div class="mb-1.5 flex items-center gap-2">
+							<span class="text-[10px] text-eft-muted">#{s.num}</span>
+							<code class="rounded bg-eft-elevated px-1.5 py-0.5 font-mono text-xs font-bold text-eft-gold">{s.key}</code>
+						</div>
+						<p class="text-sm leading-relaxed text-eft-text">{s.desc}</p>
+						<p class="mt-2 text-xs text-eft-muted">Рекомендуем: <span class="font-semibold text-orange-400">{s.rec}</span></p>
+					</div>
+				{/each}
+			</div>
+		</section>
+
+		<!-- Все настройки -->
 		{#each CATEGORIES as cat}
-			<section>
+			<section id={cat.id}>
 				<h2 class="mb-2 text-[10px] font-bold uppercase tracking-widest text-eft-muted">{cat.title}</h2>
 				<div class="overflow-hidden rounded-xl border border-eft-border bg-eft-surface">
 					{#each cat.settings as s}
 						<div class="border-b border-eft-border px-4 py-3 last:border-b-0">
-							<div class="mb-1.5 flex items-center justify-between gap-2">
-								<div class="flex items-center gap-2">
-									<span class="text-[10px] text-eft-muted">#{s.num}</span>
-									<code class="rounded bg-eft-elevated px-1.5 py-0.5 font-mono text-xs font-bold text-eft-gold">{s.key}</code>
-								</div>
-								<span class="shrink-0 rounded border border-eft-border px-1.5 py-0.5 text-[10px] text-eft-muted">{s.rec}</span>
+							<div class="mb-1.5 flex items-center gap-2">
+								<span class="text-[10px] text-eft-muted">#{s.num}</span>
+								<code class="rounded bg-eft-elevated px-1.5 py-0.5 font-mono text-xs font-bold text-eft-gold">{s.key}</code>
 							</div>
 							<p class="text-sm leading-relaxed text-eft-text">{s.desc}</p>
+							<p class="mt-2 text-xs text-eft-muted">Рекомендуем: <span class="font-semibold text-orange-400">{s.rec}</span></p>
 						</div>
 					{/each}
 				</div>
 			</section>
 		{/each}
 
+		<!-- Термины -->
 		<section id="glossary">
 			<h2 class="mb-2 text-[10px] font-bold uppercase tracking-widest text-eft-muted">Термины</h2>
 			<div class="overflow-hidden rounded-xl border border-eft-border bg-eft-surface">
@@ -146,6 +213,43 @@
 		class="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-28 bg-gradient-to-t from-eft-bg via-eft-bg/70 to-transparent"
 		aria-hidden="true"
 	></div>
+
+	<!-- Кнопка навигации -->
+	<button
+		onclick={() => (showNav = true)}
+		class="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-full border border-eft-border bg-eft-surface px-10 py-4 text-sm font-semibold text-eft-text shadow-[0_4px_24px_rgba(0,0,0,0.45)] transition-colors hover:border-eft-gold active:opacity-70"
+	>
+		<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+		</svg>
+		Разделы
+	</button>
+
+	<!-- Шторка навигации -->
+	{#if showNav}
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div onclick={() => (showNav = false)} class="fixed inset-0 z-50 bg-black/50" aria-hidden="true"></div>
+		<div class="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border-t border-eft-border bg-eft-surface pb-[env(safe-area-inset-bottom,0px)]">
+			<div class="flex items-center justify-between px-5 py-4">
+				<p class="text-sm font-bold text-eft-text">Разделы</p>
+				<button onclick={() => (showNav = false)} class="flex h-7 w-7 items-center justify-center rounded-full border border-eft-border text-eft-muted transition-colors hover:text-eft-text">
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M18 6 6 18"/><path d="M6 6l12 12"/>
+					</svg>
+				</button>
+			</div>
+			<div class="max-h-[60vh] overflow-y-auto pb-4">
+				{#each NAV_ITEMS as item}
+					<button
+						onclick={() => navTo(item.id)}
+						class="flex w-full items-center px-5 py-3 text-left text-sm text-eft-muted transition-colors hover:bg-eft-elevated hover:text-eft-text active:bg-eft-elevated"
+					>
+						{item.label}
+					</button>
+				{/each}
+			</div>
+		</div>
+	{/if}
 </div>
 
 <!-- ───── Desktop (docs) ───── -->

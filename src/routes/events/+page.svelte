@@ -67,21 +67,11 @@
 		if (!el) return;
 
 		let lastY = 0;
+		let lastTouchTime = 0;
+		let velocity = 0; // px/ms, positive = вниз
 
-		function onTouchStart(e: TouchEvent) {
-			lastY = e.touches[0].clientY;
-			cancelAnimationFrame(animFrameId);
-		}
-
-		function onTouchMove(e: TouchEvent) {
-			const y = e.touches[0].clientY;
-			const dy = lastY - y;
-			lastY = y;
-
-			e.preventDefault();
-
+		function applyDelta(dy: number) {
 			if (dy > 0) {
-				// Скролл вниз: сначала схлопываем календарь, потом скроллим список
 				if (collapseOffset < collapseRange) {
 					const used = Math.min(dy, collapseRange - collapseOffset);
 					collapseOffset += used;
@@ -91,7 +81,6 @@
 					eventsListEl.scrollTop += dy;
 				}
 			} else {
-				// Скролл вверх: сначала скроллим список, потом раскрываем календарь
 				const scrollTop = eventsListEl?.scrollTop ?? 0;
 				if (scrollTop > 0 && eventsListEl) {
 					const newTop = Math.max(0, scrollTop + dy);
@@ -104,12 +93,57 @@
 			}
 		}
 
+		function onTouchStart(e: TouchEvent) {
+			lastY = e.touches[0].clientY;
+			lastTouchTime = e.timeStamp;
+			velocity = 0;
+			cancelAnimationFrame(animFrameId);
+		}
+
+		function onTouchMove(e: TouchEvent) {
+			const y = e.touches[0].clientY;
+			const dt = e.timeStamp - lastTouchTime;
+			const dy = lastY - y;
+			lastY = y;
+			lastTouchTime = e.timeStamp;
+
+			e.preventDefault();
+
+			if (dt > 0) {
+				velocity = velocity * 0.6 + (dy / dt) * 0.4;
+			}
+
+			applyDelta(dy);
+		}
+
+		function onTouchEnd() {
+			if (Math.abs(velocity) < 0.04) return;
+
+			cancelAnimationFrame(animFrameId);
+			let lastFrameTime = performance.now();
+
+			function step(now: number) {
+				const dt = Math.min(now - lastFrameTime, 32);
+				lastFrameTime = now;
+
+				velocity *= Math.pow(0.92, dt / 16);
+				if (Math.abs(velocity) < 0.02) return;
+
+				applyDelta(velocity * dt);
+				animFrameId = requestAnimationFrame(step);
+			}
+
+			animFrameId = requestAnimationFrame(step);
+		}
+
 		el.addEventListener('touchstart', onTouchStart, { passive: true });
 		el.addEventListener('touchmove', onTouchMove, { passive: false });
+		el.addEventListener('touchend', onTouchEnd, { passive: true });
 
 		return () => {
 			el.removeEventListener('touchstart', onTouchStart);
 			el.removeEventListener('touchmove', onTouchMove);
+			el.removeEventListener('touchend', onTouchEnd);
 		};
 	});
 

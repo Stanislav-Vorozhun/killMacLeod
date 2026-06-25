@@ -25,6 +25,93 @@
 	// Mobile state
 	let mobileEventDetail = $state<{ posts: VkPost[]; iso: string; w: WeatherDay | undefined; activeIdx: number } | null>(null);
 	let showMobileClubFilter = $state(false);
+	let mobileContainerEl = $state<HTMLElement | null>(null);
+	let eventsListEl = $state<HTMLElement | null>(null);
+	let calendarEl = $state<HTMLElement | null>(null);
+	let naturalCalendarH = $state(0);
+	let collapseOffset = $state(0);
+
+	const COLLAPSED_H = 0;
+	const collapseRange = $derived(Math.max(1, naturalCalendarH - COLLAPSED_H));
+	let animFrameId = 0;
+
+	function snapOpen() {
+		cancelAnimationFrame(animFrameId);
+		const startOffset = collapseOffset;
+		const startTime = performance.now();
+		const duration = 320;
+		function step(now: number) {
+			const progress = Math.min(1, (now - startTime) / duration);
+			const eased = 1 - Math.pow(1 - progress, 3);
+			collapseOffset = Math.round(startOffset * (1 - eased));
+			if (progress < 1) animFrameId = requestAnimationFrame(step);
+			else collapseOffset = 0;
+		}
+		animFrameId = requestAnimationFrame(step);
+	}
+
+	$effect(() => {
+		if (calendarEl && !naturalCalendarH) {
+			naturalCalendarH = calendarEl.scrollHeight;
+		}
+	});
+
+	const calendarPx = $derived(
+		naturalCalendarH && collapseOffset > 0
+			? Math.round(naturalCalendarH - (Math.min(collapseOffset, collapseRange) / collapseRange) * (naturalCalendarH - COLLAPSED_H))
+			: null
+	);
+
+	$effect(() => {
+		const el = mobileContainerEl;
+		if (!el) return;
+
+		let lastY = 0;
+
+		function onTouchStart(e: TouchEvent) {
+			lastY = e.touches[0].clientY;
+			cancelAnimationFrame(animFrameId);
+		}
+
+		function onTouchMove(e: TouchEvent) {
+			const y = e.touches[0].clientY;
+			const dy = lastY - y;
+			lastY = y;
+
+			e.preventDefault();
+
+			if (dy > 0) {
+				// Скролл вниз: сначала схлопываем календарь, потом скроллим список
+				if (collapseOffset < collapseRange) {
+					const used = Math.min(dy, collapseRange - collapseOffset);
+					collapseOffset += used;
+					const excess = dy - used;
+					if (excess > 0 && eventsListEl) eventsListEl.scrollTop += excess;
+				} else if (eventsListEl) {
+					eventsListEl.scrollTop += dy;
+				}
+			} else {
+				// Скролл вверх: сначала скроллим список, потом раскрываем календарь
+				const scrollTop = eventsListEl?.scrollTop ?? 0;
+				if (scrollTop > 0 && eventsListEl) {
+					const newTop = Math.max(0, scrollTop + dy);
+					eventsListEl.scrollTop = newTop;
+					const excess = Math.abs(dy) - (scrollTop - newTop);
+					if (excess > 0 && collapseOffset > 0) collapseOffset = Math.max(0, collapseOffset - excess);
+				} else if (collapseOffset > 0) {
+					collapseOffset = Math.max(0, collapseOffset + dy);
+				}
+			}
+		}
+
+		el.addEventListener('touchstart', onTouchStart, { passive: true });
+		el.addEventListener('touchmove', onTouchMove, { passive: false });
+
+		return () => {
+			el.removeEventListener('touchstart', onTouchStart);
+			el.removeEventListener('touchmove', onTouchMove);
+		};
+	});
 
 	const MONTH_NAMES = [
 		'Январь','Февраль','Март','Апрель','Май','Июнь',
@@ -200,10 +287,15 @@
 <!-- ═══════════════════════════════════════════════════════════
      MOBILE LAYOUT
      ═══════════════════════════════════════════════════════════ -->
-<div class="flex flex-col h-full min-h-0 overflow-hidden md:hidden">
+<div bind:this={mobileContainerEl} class="flex flex-col h-full min-h-0 overflow-hidden md:hidden">
 
 	<!-- Apple-style compact calendar -->
-	<div class="shrink-0 border-b border-eft-border bg-eft-bg">
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
+	<div
+		bind:this={calendarEl}
+		class="shrink-0 border-b border-eft-border bg-eft-bg overflow-hidden"
+		style={calendarPx !== null ? `height: ${calendarPx}px;` : undefined}
+	>
 
 		<!-- Month nav -->
 		<div class="flex items-center justify-between px-5 pt-4 pb-1">
@@ -260,7 +352,10 @@
 	</div>
 
 	<!-- Events list -->
-	<div class="flex-1 min-h-0 bg-eft-bg {showMobileClubFilter || mobileEventDetail ? 'overflow-hidden' : 'overflow-y-auto'}">
+	<div
+		bind:this={eventsListEl}
+		class="flex-1 min-h-0 bg-eft-bg {showMobileClubFilter || mobileEventDetail ? 'overflow-hidden' : 'overflow-y-auto'}"
+	>
 
 		{#if !data.hasToken}
 			<div class="flex flex-col items-center justify-center h-full gap-3 px-8 text-center">
@@ -650,31 +745,52 @@
      MOBILE: bottom button (Клубы)
      ═══════════════════════════════════════════════════════════ -->
 {#if !mobileEventDetail}
-	<button
-		onclick={() => (showMobileClubFilter = !showMobileClubFilter)}
-		class="fixed bottom-12 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-full border px-9 py-4 text-sm font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.45)] transition-colors md:hidden
-			{showMobileClubFilter
-				? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400 hover:bg-emerald-400/20'
-				: 'border-eft-border bg-eft-surface text-eft-text hover:border-eft-gold'}"
-	>
-		{#if showMobileClubFilter}
-			Готово
-		{:else}
-			{#if sourceFilter !== 'all'}
-				<span class="w-2.5 h-2.5 rounded-full shrink-0 {DOT_COLORS[sourceFilter]}"></span>
+	<div class="fixed bottom-12 left-1/2 z-[60] -translate-x-1/2 flex items-center gap-3 md:hidden">
+		<!-- Клубы -->
+		<button
+			onclick={() => (showMobileClubFilter = !showMobileClubFilter)}
+			class="flex items-center gap-3 rounded-full border px-9 py-4 text-sm font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.45)] transition-colors
+				{showMobileClubFilter
+					? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400 hover:bg-emerald-400/20'
+					: 'border-eft-border bg-eft-surface text-eft-text hover:border-eft-gold'}"
+		>
+			{#if showMobileClubFilter}
+				Готово
 			{:else}
-				<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="currentColor">
-					<rect x="1" y="3" width="14" height="1.5" rx="0.75"/>
-					<rect x="3" y="7" width="10" height="1.5" rx="0.75"/>
-					<rect x="6" y="11" width="4" height="1.5" rx="0.75"/>
-				</svg>
+				{#if sourceFilter !== 'all'}
+					<span class="w-2.5 h-2.5 rounded-full shrink-0 {DOT_COLORS[sourceFilter]}"></span>
+				{:else}
+					<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+						<rect x="1" y="3" width="14" height="1.5" rx="0.75"/>
+						<rect x="3" y="7" width="10" height="1.5" rx="0.75"/>
+						<rect x="6" y="11" width="4" height="1.5" rx="0.75"/>
+					</svg>
+				{/if}
+				Клубы
+				{#if sourceFilter !== 'all'}
+					<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-eft-gold px-1.5 text-[10px] font-bold text-black">1</span>
+				{/if}
 			{/if}
-			Клубы
-			{#if sourceFilter !== 'all'}
-				<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-eft-gold px-1.5 text-[10px] font-bold text-black">1</span>
-			{/if}
+		</button>
+
+		<!-- Кнопка возврата к календарю — абсолютная, не сдвигает Клубы -->
+		{#if collapseOffset > 0}
+			<div class="absolute left-full pl-3" transition:fade={{ duration: 200 }}>
+				<button
+					onclick={snapOpen}
+					class="w-14 h-14 flex items-center justify-center rounded-full border border-eft-border bg-eft-surface text-eft-muted shadow-[0_4px_24px_rgba(0,0,0,0.45)] transition-colors active:bg-eft-elevated hover:border-eft-gold hover:text-eft-gold"
+					aria-label="Показать календарь"
+				>
+					<svg class="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="3" y="4" width="14" height="13" rx="2"/>
+						<path d="M3 8h14"/>
+						<path d="M7 2v3M13 2v3"/>
+						<path d="M7 12h2M11 12h2M7 15h2"/>
+					</svg>
+				</button>
+			</div>
 		{/if}
-	</button>
+	</div>
 {/if}
 
 <!-- ═══════════════════════════════════════════════════════════

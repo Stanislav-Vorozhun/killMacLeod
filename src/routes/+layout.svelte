@@ -2,8 +2,11 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { navigating, page } from '$app/state';
+	import { inject } from '@vercel/analytics';
 
 	let { children } = $props();
+
+	inject();
 
 	const isHome = $derived(page.url.pathname === '/');
 </script>

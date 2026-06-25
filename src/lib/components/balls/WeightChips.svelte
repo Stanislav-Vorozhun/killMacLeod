@@ -23,7 +23,7 @@
 		<button
 			type="button"
 			onclick={() => onchange(weight)}
-			class="rounded border px-2 py-0.5 text-xs transition-colors
+			class="rounded border px-3 py-1.5 text-sm transition-colors
 				{isActive(weight)
 					? 'border-eft-gold bg-eft-gold-dim text-eft-gold'
 					: 'border-eft-border-hi text-eft-muted hover:border-eft-gold hover:text-eft-text'}"

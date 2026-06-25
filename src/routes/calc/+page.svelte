@@ -40,6 +40,8 @@
 		sniper: 2.9,
 	};
 
+	const MAX_SPEED_MS: Record<System, number> = { aeg: 250, gas: 305 };
+
 	const DEFAULT_SETTINGS: CalcSettings = {
 		mode: 'speed-to-joules',
 		system: 'aeg',
@@ -107,6 +109,9 @@
 		const v = Math.sqrt((2 * applied.joules) / m);
 		return { ms: v, fps: v / 0.3048 };
 	});
+
+	const maxSpeedMs = $derived(MAX_SPEED_MS[applied.system]);
+	const maxSpeedFps = $derived(Math.round(maxSpeedMs / 0.3048));
 
 	function limitStatus(value: number, limit: number): 'ok' | 'warn' | 'over' {
 		if (value <= limit) return value >= limit * 0.97 ? 'warn' : 'ok';
@@ -327,12 +332,12 @@
 		{@const v020 = Math.sqrt((2 * j) / 0.0002)}
 		{@const zone = resultZone(j)}
 		<div class="flex items-start gap-4">
-			<span class="font-bold tabular-nums {resultColor(j)} {large ? 'text-5xl' : 'text-4xl'}">
-				{fmt(j)} <span class={large ? 'text-2xl' : 'text-lg'}>Дж</span>
+			<span class="font-bold tabular-nums {resultColor(j)} {large ? 'text-4xl' : 'text-3xl'}">
+				{fmt(j)} <span class={large ? 'text-xl' : 'text-base'}>Дж</span>
 			</span>
 			<div class="mt-1 flex flex-col items-start border-l-2 pl-3 {zone.color}">
-				<span class="text-sm font-bold {large ? 'text-base' : ''}">{zone.label}</span>
-				<span class="text-[10px] opacity-70">{zone.sub}</span>
+				<span class="text-sm font-bold {large ? 'text-base min-[390px]:text-[20px]' : ''}">{zone.label}</span>
+				<span class="text-[10px] opacity-70 {large ? 'min-[390px]:text-[13px]' : ''}">{zone.sub}</span>
 			</div>
 		</div>
 		<p class="min-h-5 text-xs leading-5 text-eft-muted">
@@ -344,13 +349,19 @@
 			{/if}
 		</p>
 		{#if st}
-			<div class="rounded-lg border p-3 {STATUS_BG[st.status]}">
+			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+			<div onclick={openLimitsInfo} class="relative cursor-pointer rounded-lg border px-3 py-3 transition-opacity active:opacity-70 md:cursor-default {STATUS_BG[st.status]}">
 				<p class="text-sm font-bold {STATUS_COLOR[st.status]}">{STATUS_LABEL[st.status]}</p>
-				<p class="mt-0.5 text-xs text-eft-muted">
+				<p class="mt-0.5 text-xs text-eft-muted pr-7">
 					{applied.system === 'aeg'
 						? `${fmt(st.value, 1)} м/с (на 0.20 г) из ${st.limit} м/с`
 						: `${fmt(j)} Дж из ${st.limit} Дж`}
 				</p>
+				<span class="absolute right-2 top-2 flex h-6 w-6 items-center justify-center text-current opacity-40 md:hidden" aria-hidden="true">
+					<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+					</svg>
+				</span>
 			</div>
 		{/if}
 	{:else if applied.mode === 'joules-to-speed' && resultSpeed() !== null}
@@ -360,22 +371,28 @@
 		{@const zone = resultZone(applied.joules)}
 		<div class="flex items-start gap-4">
 			<div class="flex flex-col gap-1">
-				<span class="font-bold tabular-nums {c} {large ? 'text-5xl' : 'text-4xl'}">
-					{fmt(r.ms)} <span class={large ? 'text-2xl' : 'text-lg'}>м/с</span>
+				<span class="font-bold tabular-nums {c} {large ? 'text-4xl' : 'text-3xl'}">
+					{fmt(r.ms)} <span class={large ? 'text-xl' : 'text-base'}>м/с</span>
 				</span>
-				<span class="font-bold tabular-nums {c} opacity-70 {large ? 'text-2xl' : 'text-xl'}">
-					{fmt(r.fps)} <span class={large ? 'text-base' : 'text-sm'}>fps</span>
+				<span class="font-bold tabular-nums {c} opacity-70 {large ? 'text-xl' : 'text-lg'}">
+					{fmt(r.fps)} <span class={large ? 'text-sm' : 'text-xs'}>fps</span>
 				</span>
 			</div>
 			<div class="mt-1 flex flex-col items-start border-l-2 pl-3 {zone.color}">
-				<span class="text-sm font-bold {large ? 'text-base' : ''}">{zone.label}</span>
-				<span class="text-[10px] opacity-70">{zone.sub}</span>
+				<span class="text-sm font-bold {large ? 'text-base min-[390px]:text-[20px]' : ''}">{zone.label}</span>
+				<span class="text-[10px] opacity-70 {large ? 'min-[390px]:text-[13px]' : ''}">{zone.sub}</span>
 			</div>
 		</div>
 		{#if st}
-			<div class="rounded-lg border p-3 {STATUS_BG[st.status]}">
+			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+			<div onclick={openLimitsInfo} class="relative cursor-pointer rounded-lg border px-3 py-3 transition-opacity active:opacity-70 md:cursor-default {STATUS_BG[st.status]}">
 				<p class="text-sm font-bold {STATUS_COLOR[st.status]}">{STATUS_LABEL[st.status]}</p>
-				<p class="mt-0.5 text-xs text-eft-muted">{fmt(applied.joules)} Дж из {st.limit} Дж</p>
+				<p class="mt-0.5 text-xs text-eft-muted pr-7">{fmt(applied.joules)} Дж из {st.limit} Дж</p>
+				<span class="absolute right-2 top-2 flex h-6 w-6 items-center justify-center text-current opacity-40 md:hidden" aria-hidden="true">
+					<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+					</svg>
+				</span>
 			</div>
 		{/if}
 	{:else}
@@ -420,31 +437,91 @@
 <div class="h-full overflow-hidden md:overflow-y-auto">
 	<!-- Mobile -->
 	<div
-		class="flex h-full flex-col overflow-hidden px-3 pt-[15px] pb-24 md:hidden
+		class="flex h-full flex-col overflow-hidden md:hidden
 			{showMobileSettings || showLimitsInfo ? 'max-md:overflow-hidden max-md:overscroll-none' : ''}"
 	>
-		<h2 class="shrink-0 text-center text-sm font-bold uppercase tracking-widest">Калькулятор мощности</h2>
+		<h2 class="shrink-0 px-3 pt-[15px] pb-0 text-center text-sm font-bold uppercase tracking-widest">Калькулятор мощности</h2>
 
-		<div class="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-y-auto py-4">
-			<div class="relative flex w-full max-w-sm flex-col gap-3 rounded-xl border border-eft-border bg-eft-surface p-6">
-				<button
-					type="button"
-					onclick={openLimitsInfo}
-					aria-label="Таблица лимитов"
-					class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-eft-border text-eft-muted transition-colors hover:border-eft-gold hover:text-eft-gold"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-						<circle cx="12" cy="12" r="10"/>
-						<path d="M12 16v-4"/>
-						<path d="M12 8h.01"/>
-					</svg>
-				</button>
-				<p class="text-[10px] font-bold uppercase tracking-widest text-eft-muted">Результат</p>
-				{@render resultPanel(true)}
-			</div>
+		<div class="min-h-0 flex-1 overflow-y-auto">
+			<div class="flex min-h-full flex-col items-center justify-center gap-4 max-[389px]:gap-[14px] px-3 py-4 max-[389px]:py-[14px] pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
+				<div class="flex w-full max-w-sm flex-col gap-3 max-[389px]:gap-[10px] rounded-xl border border-eft-border bg-eft-surface p-6 max-[389px]:p-4">
+					<p class="text-[10px] font-bold uppercase tracking-widest text-eft-muted">Результат</p>
+					{@render resultPanel(true)}
+				</div>
 
-			<div class="w-full max-w-sm">
-				{@render calcParameters(applied, () => {})}
+				<!-- Большой инпут скорости / джоулей -->
+				<div class="w-full max-w-sm overflow-hidden rounded-xl border border-eft-border bg-eft-surface">
+					{#if applied.mode === 'speed-to-joules'}
+						<div class="flex">
+							<input
+								type="number"
+								inputmode="numeric"
+								step="1"
+								min="0"
+								max={applied.speedUnit === 'ms' ? maxSpeedMs : maxSpeedFps}
+								value={applied.speedUnit === 'ms' ? applied.speedMs : applied.speedFps}
+								onkeydown={(e) => { if (['e','E','+','-','.'].includes(e.key)) e.preventDefault(); }}
+								oninput={(e) => {
+									const el = e.target as HTMLInputElement;
+									let v = el.valueAsNumber;
+									if (isNaN(v) || v < 0) v = 0;
+									const max = applied.speedUnit === 'ms' ? maxSpeedMs : maxSpeedFps;
+									if (v > max) { v = max; el.value = String(max); }
+									if (applied.speedUnit === 'ms') syncMsFps(applied, v);
+									else syncFpsMs(applied, v);
+								}}
+								placeholder="0"
+								class="min-w-0 flex-1 bg-transparent py-4 max-[389px]:py-3 text-center text-3xl font-bold tabular-nums text-eft-text outline-none placeholder:text-eft-muted/30"
+							/>
+							<div class="flex flex-col divide-y divide-eft-border border-l border-eft-border">
+								{#each ([['ms', 'м/с'], ['fps', 'fps']] as const) as [u, ul]}
+									<button
+										onclick={() => { applied.speedUnit = u; }}
+										class="flex flex-1 items-center justify-center px-5 text-xs font-bold uppercase tracking-widest transition-colors
+											{applied.speedUnit === u ? 'bg-eft-elevated text-eft-gold' : 'text-eft-muted active:text-eft-text'}"
+									>{ul}</button>
+								{/each}
+							</div>
+						</div>
+						{#if (applied.speedUnit === 'ms' && applied.speedMs) || (applied.speedUnit === 'fps' && applied.speedFps)}
+							<p class="border-t border-eft-border px-4 py-2 text-center text-xs text-eft-muted/50">
+								{applied.speedUnit === 'ms' ? `= ${applied.speedFps} fps` : `= ${applied.speedMs} м/с`}
+							</p>
+						{/if}
+					{:else}
+						<div class="flex">
+							<input
+								type="number"
+								inputmode="decimal"
+								step="0.01"
+								min="0"
+								bind:value={applied.joules}
+								onkeydown={(e) => { if (['e','E','+','-'].includes(e.key)) e.preventDefault(); }}
+								placeholder="0.00"
+								class="min-w-0 flex-1 bg-transparent py-4 max-[389px]:py-3 text-center text-3xl font-bold tabular-nums text-eft-text outline-none placeholder:text-eft-muted/30"
+							/>
+							<div class="flex items-center justify-center border-l border-eft-border px-5">
+								<span class="text-sm font-bold uppercase tracking-widest text-eft-muted">Дж</span>
+							</div>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Чипсы применённых параметров -->
+				<div class="flex w-full max-w-sm flex-wrap justify-center gap-1.5 mb-[20px]">
+					<span class="inline-flex items-center rounded-full border border-eft-border bg-eft-elevated px-2.5 py-1 text-[11px] font-medium text-eft-muted">
+						{applied.weightG} г
+					</span>
+					<span class="inline-flex items-center rounded-full border border-eft-border bg-eft-elevated px-2.5 py-1 text-[11px] font-medium text-eft-muted">
+						{applied.system === 'aeg' ? 'AEG' : 'Газ / ВВД'}
+					</span>
+					<span class="inline-flex items-center rounded-full border border-eft-border bg-eft-elevated px-2.5 py-1 text-[11px] font-medium text-eft-muted">
+						{applied.mode === 'speed-to-joules' ? 'Скорость → Дж' : 'Дж → Скорость'}
+					</span>
+					<span class="inline-flex items-center rounded-full border border-eft-border bg-eft-elevated px-2.5 py-1 text-[11px] font-medium text-eft-muted">
+						{WEAPON_CLASSES.find(w => w.value === applied.weaponClass)?.short}
+					</span>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -472,13 +549,13 @@
 </div>
 
 <div
-	class="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-60 bg-gradient-to-t from-eft-bg via-eft-bg/80 to-transparent md:hidden"
+	class="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-32 bg-gradient-to-t from-eft-bg via-eft-bg/60 to-transparent md:hidden"
 	aria-hidden="true"
 ></div>
 
 <button
 	onclick={() => (showMobileSettings ? applyMobileSettings() : openMobileSettings())}
-	class="fixed bottom-12 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-full border px-10 py-4 text-sm font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.45)] transition-colors md:hidden
+	class="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-full border px-10 py-4 text-sm font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.45)] transition-colors md:hidden
 		{showMobileSettings
 			? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400 hover:bg-emerald-400/20'
 			: 'border-eft-border bg-eft-surface text-eft-text hover:border-eft-gold'}"
@@ -486,7 +563,7 @@
 	{#if showMobileSettings}
 		Применить
 	{:else}
-		<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 			<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
 			<circle cx="12" cy="12" r="3"/>
 		</svg>
@@ -534,7 +611,15 @@
 				</button>
 			</div>
 			<div class="relative flex min-h-0 flex-1 flex-col">
-				<div class="flex-1 overflow-y-auto p-5 pb-20">
+				<div class="flex-1 overflow-y-auto p-5 pb-20 flex flex-col gap-5">
+					<div>
+						<p class="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-eft-muted">Вес шара</p>
+						<WeightChips value={applied.weightG} onchange={(w) => { applied.weightG = w; }} />
+						{#if applied.system === 'aeg'}
+							<p class="mt-1.5 text-[10px] leading-snug text-eft-muted/60">Проверка лимита AEG — по правилам замер шаром 0.20 г</p>
+						{/if}
+					</div>
+					<div class="border-t border-eft-border"></div>
 					{@render calcControls(draft, () => {})}
 				</div>
 			</div>

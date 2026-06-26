@@ -14,12 +14,18 @@ function isBall(name: string): boolean {
 }
 
 export async function fetchPentagonProducts(): Promise<Product[]> {
-	const res = await fetch('https://pentagon.by/bol.html', {
-		headers: {
-			'User-Agent':
-				'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-		},
-	});
+	let res: Response;
+	try {
+		res = await fetch('https://pentagon.by/bol.html', {
+			headers: {
+				'User-Agent':
+					'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+			},
+			signal: AbortSignal.timeout(10_000),
+		});
+	} catch {
+		return [];
+	}
 	if (!res.ok) return [];
 
 	const html = await res.text();

@@ -57,7 +57,10 @@ export async function fetchPyroProducts(): Promise<PyroProduct[]> {
 	const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=goods`;
 
 	try {
-		const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+		const res = await fetch(url, {
+			headers: { 'User-Agent': 'Mozilla/5.0' },
+			signal: AbortSignal.timeout(10_000),
+		});
 		if (!res.ok) return [];
 
 		const raw = await res.text();

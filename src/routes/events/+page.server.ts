@@ -78,11 +78,12 @@ const DATE_PATTERNS: RegExp[] = [
 ];
 
 function extractDate(text: string): string | null {
+	const safe = text.length > 2000 ? text.slice(0, 2000) : text;
 	for (const pattern of DATE_PATTERNS) {
-		const m = text.match(pattern);
+		const m = safe.match(pattern);
 		if (m) return m[0];
 	}
-	const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+	const lines = safe.split('\n').map((l) => l.trim()).filter(Boolean);
 	for (const line of lines.slice(0, 5)) {
 		const m = line.match(/\d{1,2}[./]\d{2}/);
 		if (m) return m[0];
@@ -111,7 +112,14 @@ async function fetchWallPosts(domain: string, source: VkPost['source'], count = 
 		access_token: token,
 	});
 
-	const res = await fetch(`${VK_API}/wall.get?${params}`);
+	let res: Response;
+	try {
+		res = await fetch(`${VK_API}/wall.get?${params}`, {
+			signal: AbortSignal.timeout(10_000),
+		});
+	} catch {
+		return [];
+	}
 	if (!res.ok) return [];
 
 	const data = await res.json();
@@ -147,7 +155,7 @@ async function fetchWeather(startDate: string, endDate: string): Promise<Record<
 		url.searchParams.set('start_date', startDate);
 		url.searchParams.set('end_date', endDate);
 
-		const res = await fetch(url.toString());
+		const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) });
 		if (!res.ok) return {};
 		const json = await res.json();
 

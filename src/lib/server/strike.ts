@@ -88,6 +88,7 @@ async function fetchPage(page: number): Promise<string> {
 			'User-Agent':
 				'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 		},
+		signal: AbortSignal.timeout(10_000),
 	});
 	if (!res.ok) throw new Error(`strike.by page ${page}: HTTP ${res.status}`);
 	return res.text();

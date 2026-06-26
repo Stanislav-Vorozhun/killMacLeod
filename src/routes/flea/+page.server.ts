@@ -81,7 +81,15 @@ async function fetchKufarListings(query: string, region: string, cursor: string 
 	if (region) params.set('rgn', region);
 	if (cursor) params.set('cursor', cursor);
 
-	const res = await fetch(`${BASE_URL}?${params}`, { headers: { Accept: 'application/json' } });
+	let res: Response;
+	try {
+		res = await fetch(`${BASE_URL}?${params}`, {
+			headers: { Accept: 'application/json' },
+			signal: AbortSignal.timeout(10_000),
+		});
+	} catch {
+		return { listings: [], nextToken: null, total: 0 };
+	}
 	if (!res.ok) return { listings: [], nextToken: null, total: 0 };
 
 	const data = await res.json();
@@ -127,7 +135,14 @@ async function fetchVkListings(count = 50): Promise<Listing[]> {
 		access_token: token,
 	});
 
-	const res = await fetch(`https://api.vk.com/method/wall.get?${params}`);
+	let res: Response;
+	try {
+		res = await fetch(`https://api.vk.com/method/wall.get?${params}`, {
+			signal: AbortSignal.timeout(10_000),
+		});
+	} catch {
+		return [];
+	}
 	if (!res.ok) return [];
 
 	const data = await res.json();
@@ -164,9 +179,10 @@ export const load: PageServerLoad = ({ url, setHeaders }) => {
 	// CDN кэш 5 минут (данные более динамичные, чем balls/events)
 	setHeaders({ 'cache-control': 'public, max-age=0, s-maxage=300, stale-while-revalidate=3600' });
 
-	const query = url.searchParams.get('q') ?? 'страйкбол';
-	const region = url.searchParams.get('rgn') ?? '';
-	const cursor = url.searchParams.get('cursor') ?? null;
+	const query = (url.searchParams.get('q') ?? 'страйкбол').slice(0, 200);
+	const region = (url.searchParams.get('rgn') ?? '').slice(0, 50);
+	const rawCursor = url.searchParams.get('cursor');
+	const cursor = rawCursor && /^[\w=+/-]{1,500}$/.test(rawCursor) ? rawCursor : null;
 
 	const listings: Promise<ListingsResult> = Promise.all([
 		fetchKufarListings(query, region, cursor),

@@ -20,7 +20,14 @@
 	let viewYear = $state(today.getFullYear());
 	let viewMonth = $state(today.getMonth());
 	let selected = $state<VkPost | null>(null);
-	let sourceFilter = $state<'all' | 'cqb' | 'strikeball' | 'salamander' | 'bsg'>('all');
+	let selectedSources = $state(new Set<string>());
+
+	function toggleSource(source: string) {
+		const next = new Set(selectedSources);
+		if (next.has(source)) next.delete(source);
+		else next.add(source);
+		selectedSources = next;
+	}
 
 	// Mobile state
 	let mobileEventDetail = $state<{ posts: VkPost[]; iso: string; w: WeatherDay | undefined; activeIdx: number } | null>(null);
@@ -184,7 +191,7 @@
 	};
 
 	const filteredPosts = $derived(
-		(eventsData?.posts ?? []).filter((p) => sourceFilter === 'all' || p.source === sourceFilter)
+		(eventsData?.posts ?? []).filter((p) => selectedSources.size === 0 || selectedSources.has(p.source))
 	);
 
 	const postsByDate = $derived(
@@ -357,12 +364,12 @@
 		<!-- Calendar grid -->
 		<div class="grid grid-cols-7 px-3 pb-3" style="grid-template-rows: repeat(6, 2.625rem)">
 			{#each calendarDays() as cell (cell.iso)}
-				{@const posts = cell.inMonth && cell.iso >= todayIso ? (postsByDate[cell.iso] ?? []) : []}
+				{@const posts = cell.iso >= todayIso ? (postsByDate[cell.iso] ?? []) : []}
 				{@const hasPosts = posts.length > 0}
 				{@const isSelected = mobileEventDetail?.iso === cell.iso}
 				<button
 					onclick={() => openMobileEventDetail(cell.iso)}
-					disabled={!hasPosts || !cell.inMonth}
+					disabled={!hasPosts}
 					class="flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors
 						{!cell.inMonth ? 'opacity-20' : ''}
 						{hasPosts ? 'active:bg-eft-elevated' : ''}"
@@ -372,7 +379,7 @@
 						{isSelected && !isToday(cell.iso) ? 'ring-1 ring-eft-gold ring-offset-1 ring-offset-eft-bg' : ''}"
 					>{cell.date.getDate()}</span>
 					<div class="flex items-center gap-px h-1.5">
-						{#if hasPosts && cell.inMonth}
+						{#if hasPosts}
 							{#each posts.slice(0, 3) as post}
 								<span class="w-1.5 h-1.5 rounded-full {DOT_COLORS[post.source] ?? 'bg-eft-gold'}"></span>
 							{/each}
@@ -422,9 +429,9 @@
 			<div class="flex flex-col items-center justify-center h-full gap-3 text-center px-8">
 				<span class="text-4xl">📅</span>
 				<p class="text-sm text-eft-muted">Предстоящих игр не найдено</p>
-				{#if sourceFilter !== 'all'}
+				{#if selectedSources.size > 0}
 					<button
-						onclick={() => { sourceFilter = 'all'; }}
+						onclick={() => { selectedSources = new Set(); }}
 						class="text-xs text-eft-gold underline underline-offset-2 mt-1"
 					>Показать все клубы</button>
 				{/if}
@@ -523,7 +530,7 @@
 			</div>
 			<div class="grid grid-cols-7">
 				{#each calendarDays() as cell (cell.iso)}
-					{@const hasPosts = !!(postsByDate[cell.iso]?.length)}
+					{@const hasPosts = cell.iso >= todayIso && !!(postsByDate[cell.iso]?.length)}
 					<button
 						onclick={() => { if (hasPosts) selectPost(postsByDate[cell.iso]); }}
 						class="flex flex-col items-center py-0.5 rounded transition-colors
@@ -601,9 +608,10 @@
 			<p class="text-xs uppercase tracking-widest text-eft-muted mb-2">Клубы</p>
 			<div class="flex flex-col gap-1">
 				{#each ([['all', 'Все клубы', ''] as const, ['cqb', 'CQB Club', 'bg-eft-gold'] as const, ['strikeball', 'Клуб Барс', 'bg-sky-400'] as const, ['salamander', 'Клуб Ящер', 'bg-emerald-400'] as const, ['bsg', 'BSG', 'bg-rose-400'] as const]) as [val, label, dot]}
+					{@const isActive = val === 'all' ? selectedSources.size === 0 : selectedSources.has(val)}
 					<Button
-						onclick={() => { sourceFilter = val; selected = null; }}
-						variant={sourceFilter === val ? 'active' : 'ghost'}
+						onclick={() => { if (val === 'all') { selectedSources = new Set(); } else { toggleSource(val); } selected = null; }}
+						variant={isActive ? 'active' : 'ghost'}
 						class="justify-start gap-2 w-full"
 					>
 						{#if dot}
@@ -666,7 +674,7 @@
 
 				<div class="shrink-0 overflow-hidden rounded-b-xl border border-eft-border grid grid-cols-7" style="grid-template-rows: repeat(6, minmax(5rem, 1fr))">
 					{#each calendarDays() as cell (cell.iso)}
-						{@const posts = postsByDate[cell.iso]}
+						{@const posts = cell.iso >= todayIso ? postsByDate[cell.iso] : undefined}
 						{@const w = weather[cell.iso]}
 						{@const isSelected = !!selected && selected.parsedDate === cell.iso}
 						<button
@@ -791,8 +799,12 @@
 			{#if showMobileClubFilter}
 				Готово
 			{:else}
-				{#if sourceFilter !== 'all'}
-					<span class="w-2.5 h-2.5 rounded-full shrink-0 {DOT_COLORS[sourceFilter]}"></span>
+				{#if selectedSources.size > 0}
+					<div class="flex items-center -space-x-1">
+						{#each [...selectedSources].slice(0, 3) as src}
+							<span class="w-2.5 h-2.5 rounded-full ring-1 ring-eft-bg shrink-0 {DOT_COLORS[src] ?? 'bg-eft-gold'}"></span>
+						{/each}
+					</div>
 				{:else}
 					<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="currentColor">
 						<rect x="1" y="3" width="14" height="1.5" rx="0.75"/>
@@ -801,8 +813,8 @@
 					</svg>
 				{/if}
 				Клубы
-				{#if sourceFilter !== 'all'}
-					<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-eft-gold px-1.5 text-[10px] font-bold text-black">1</span>
+				{#if selectedSources.size > 0}
+					<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-eft-gold px-1.5 text-[10px] font-bold text-black">{selectedSources.size}</span>
 				{/if}
 			{/if}
 		</button>
@@ -853,11 +865,11 @@
 				<span class="w-8" aria-hidden="true"></span>
 				<span class="text-sm font-semibold uppercase tracking-widest text-eft-text">Клубы</span>
 				<button
-					onclick={() => { sourceFilter = 'all'; }}
-					disabled={sourceFilter === 'all'}
+					onclick={() => { selectedSources = new Set(); }}
+					disabled={selectedSources.size === 0}
 					aria-label="Сбросить фильтр"
 					class="flex h-8 w-8 items-center justify-center rounded-md text-rose-400 transition-all duration-200 hover:bg-rose-400/10 disabled:pointer-events-none
-						{sourceFilter !== 'all' ? 'opacity-100' : 'opacity-0'}"
+						{selectedSources.size > 0 ? 'opacity-100' : 'opacity-0'}"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -869,10 +881,11 @@
 			<!-- Club options -->
 			<div class="px-4 py-4 space-y-1.5 pb-32">
 				{#each ([['all', 'Все клубы', ''] as const, ['cqb', 'CQB Club', 'bg-eft-gold'] as const, ['strikeball', 'Клуб Барс', 'bg-sky-400'] as const, ['salamander', 'Клуб Ящер', 'bg-emerald-400'] as const, ['bsg', 'BSG', 'bg-rose-400'] as const]) as [val, label, dot]}
+					{@const isActive = val === 'all' ? selectedSources.size === 0 : selectedSources.has(val)}
 					<button
-						onclick={() => { sourceFilter = val; }}
+						onclick={() => { if (val === 'all') { selectedSources = new Set(); } else { toggleSource(val); } }}
 						class="flex w-full items-center gap-3.5 rounded-xl px-4 py-3.5 text-sm font-medium transition-colors
-							{sourceFilter === val ? 'bg-eft-elevated text-eft-text' : 'text-eft-muted hover:bg-eft-elevated hover:text-eft-text'}"
+							{isActive ? 'bg-eft-elevated text-eft-text' : 'text-eft-muted hover:bg-eft-elevated hover:text-eft-text'}"
 					>
 						{#if dot}
 							<span class="w-3 h-3 rounded-full shrink-0 {dot}"></span>
@@ -880,7 +893,7 @@
 							<span class="w-3 h-3 rounded-full border-2 border-eft-border-hi shrink-0"></span>
 						{/if}
 						<span class="flex-1 text-left">{label}</span>
-						{#if sourceFilter === val}
+						{#if isActive}
 							<svg class="w-4 h-4 text-eft-gold shrink-0" viewBox="0 0 16 16" fill="currentColor">
 								<path d="M2.5 8.5l3.5 3.5 7.5-7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 							</svg>

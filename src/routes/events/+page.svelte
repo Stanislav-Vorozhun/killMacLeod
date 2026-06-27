@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import type { VkPost, WeatherDay, EventsData } from './+page.server';
 	import { Button } from '$lib/components/ui/button';
-	import { Separator } from '$lib/components/ui/separator';
+	import { tick } from 'svelte';
 	import { fly, fade } from 'svelte/transition';
 
 	let { data }: { data: PageData } = $props();
@@ -154,6 +154,124 @@
 		};
 	});
 
+	// ─── Desktop: continuous-scroll calendar ─────────────────────────────────
+	let calendarScrollEl = $state<HTMLElement | null>(null);
+	let bottomSentinel = $state<HTMLElement | null>(null);
+	let topSentinel = $state<HTMLElement | null>(null);
+
+	function monthRange(centerY: number, centerM: number, before = 1, after = 4) {
+		const list: Array<{ year: number; month: number }> = [];
+		for (let i = -before; i <= after; i++) {
+			const total = centerM + i;
+			list.push({ year: centerY + Math.floor(total / 12), month: ((total % 12) + 12) % 12 });
+		}
+		return list;
+	}
+
+	let renderedMonths = $state(monthRange(today.getFullYear(), today.getMonth()));
+	let _calendarInitDone = false;
+
+	async function scrollToMonth(year: number, month: number) {
+		const scrollEl = calendarScrollEl;
+		if (!scrollEl) return;
+		if (!renderedMonths.some((m) => m.year === year && m.month === month)) {
+			renderedMonths = monthRange(year, month);
+			await tick();
+		}
+		const section = scrollEl.querySelector<HTMLElement>(
+			`[data-month-section][data-year="${year}"][data-month="${month}"]`
+		);
+		if (section) {
+			const sRect = section.getBoundingClientRect();
+			const cRect = scrollEl.getBoundingClientRect();
+			const target = scrollEl.scrollTop + (sRect.top - cRect.top);
+			scrollEl.scrollTo({ top: target, behavior: 'smooth' });
+			viewYear = year;
+			viewMonth = month;
+		}
+	}
+
+	$effect(() => {
+		const scrollEl = calendarScrollEl;
+		const bEl = bottomSentinel;
+		const tEl = topSentinel;
+		if (!scrollEl) return;
+
+		if (!_calendarInitDone) {
+			_calendarInitDone = true;
+			requestAnimationFrame(() => {
+				const section = scrollEl.querySelector<HTMLElement>(
+					`[data-month-section][data-year="${today.getFullYear()}"][data-month="${today.getMonth()}"]`
+				);
+				if (section) {
+					const sRect = section.getBoundingClientRect();
+					const cRect = scrollEl.getBoundingClientRect();
+					scrollEl.scrollTop = scrollEl.scrollTop + (sRect.top - cRect.top);
+					viewYear = today.getFullYear();
+					viewMonth = today.getMonth();
+				}
+			});
+		}
+
+		function onScroll() {
+			if (!scrollEl) return;
+			const sections = Array.from(scrollEl.querySelectorAll<HTMLElement>('[data-month-section]'));
+			const cTop = scrollEl.getBoundingClientRect().top;
+			let best: { year: number; month: number } | null = null;
+			for (const section of sections) {
+				const relTop = section.getBoundingClientRect().top - cTop;
+				if (relTop <= 60) {
+					best = {
+						year: parseInt(section.getAttribute('data-year') ?? ''),
+						month: parseInt(section.getAttribute('data-month') ?? ''),
+					};
+				} else {
+					break;
+				}
+			}
+			if (best && !isNaN(best.year) && !isNaN(best.month)) {
+				viewYear = best.year;
+				viewMonth = best.month;
+			}
+		}
+		scrollEl.addEventListener('scroll', onScroll, { passive: true });
+
+		let bObs: IntersectionObserver | null = null;
+		if (bEl) {
+			bObs = new IntersectionObserver(() => {
+				const last = renderedMonths[renderedMonths.length - 1];
+				renderedMonths = [...renderedMonths, {
+					year: last.month === 11 ? last.year + 1 : last.year,
+					month: last.month === 11 ? 0 : last.month + 1,
+				}];
+			}, { root: scrollEl, rootMargin: '400px' });
+			bObs.observe(bEl);
+		}
+
+		let tObs: IntersectionObserver | null = null;
+		if (tEl) {
+			tObs = new IntersectionObserver(() => {
+				const first = renderedMonths[0];
+				const prevTop = scrollEl.scrollTop;
+				const prevH = scrollEl.scrollHeight;
+				renderedMonths = [{
+					year: first.month === 0 ? first.year - 1 : first.year,
+					month: first.month === 0 ? 11 : first.month - 1,
+				}, ...renderedMonths];
+				requestAnimationFrame(() => {
+					scrollEl.scrollTop = prevTop + (scrollEl.scrollHeight - prevH);
+				});
+			}, { root: scrollEl, rootMargin: '200px' });
+			tObs.observe(tEl);
+		}
+
+		return () => {
+			scrollEl.removeEventListener('scroll', onScroll);
+			bObs?.disconnect();
+			tObs?.disconnect();
+		};
+	});
+
 	const MONTH_NAMES = [
 		'Январь','Февраль','Март','Апрель','Май','Июнь',
 		'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь',
@@ -230,24 +348,40 @@
 		return cells;
 	}
 
+	// buildMonthCells: for desktop continuous scroll — no trailing next-month cells
+	function buildMonthCells(year: number, month: number) {
+		const firstDay = new Date(year, month, 1);
+		const startOffset = dayOfWeekMon(firstDay);
+		const daysInMonth = new Date(year, month + 1, 0).getDate();
+		const cells: Array<{ date: Date; iso: string; inMonth: boolean }> = [];
+		for (let i = startOffset - 1; i >= 0; i--) {
+			const d = new Date(year, month, -i);
+			cells.push({ date: d, iso: toIso(d), inMonth: false });
+		}
+		for (let d = 1; d <= daysInMonth; d++) {
+			const date = new Date(year, month, d);
+			cells.push({ date, iso: toIso(date), inMonth: true });
+		}
+		// Pad to complete last row — empty placeholders, no next-month days
+		while (cells.length % 7 !== 0) {
+			cells.push({ date: new Date(0), iso: '', inMonth: false });
+		}
+		return cells;
+	}
+
 	const calendarDays = $derived(() => buildCalendarDays(viewYear, viewMonth));
 
+	// Sidebar shows events for the currently viewed month
 	const upcomingDays = $derived(() => {
 		const days: Array<{ iso: string; date: Date; posts: VkPost[]; w: WeatherDay | undefined }> = [];
-		const seen = new Set<string>();
-		const checkDates = [todayIso];
-		for (let i = 1; i <= 30; i++) {
-			checkDates.push(toIso(new Date(today.getTime() + i * 86400000)));
-		}
-		for (const iso of checkDates) {
-			if (seen.has(iso)) continue;
-			seen.add(iso);
+		const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+		for (let d = 1; d <= daysInMonth; d++) {
+			const date = new Date(viewYear, viewMonth, d);
+			const iso = toIso(date);
 			const posts = postsByDate[iso] ?? [];
-			const w = weather[iso];
-			if (posts.length > 0 || iso === todayIso) {
-				days.push({ iso, date: new Date(iso + 'T12:00:00'), posts, w });
+			if (posts.length > 0) {
+				days.push({ iso, date, posts, w: weather[iso] });
 			}
-			if (days.length >= 6) break;
 		}
 		return days;
 	});
@@ -273,15 +407,19 @@
 	}
 
 	function prevMonth() {
-		if (viewMonth === 0) { viewMonth = 11; viewYear--; }
-		else viewMonth--;
+		const newM = viewMonth === 0 ? 11 : viewMonth - 1;
+		const newY = viewMonth === 0 ? viewYear - 1 : viewYear;
+		viewMonth = newM; viewYear = newY;
 		selected = null;
+		scrollToMonth(newY, newM);
 	}
 
 	function nextMonth() {
-		if (viewMonth === 11) { viewMonth = 0; viewYear++; }
-		else viewMonth++;
+		const newM = viewMonth === 11 ? 0 : viewMonth + 1;
+		const newY = viewMonth === 11 ? viewYear + 1 : viewYear;
+		viewMonth = newM; viewYear = newY;
 		selected = null;
+		scrollToMonth(newY, newM);
 	}
 
 	function selectPost(posts: VkPost[] | undefined) {
@@ -510,52 +648,7 @@
 <div class="hidden md:flex h-full min-h-0 overflow-hidden">
 
 	<!-- LEFT SIDEBAR -->
-	<div class="flex w-72 shrink-0 flex-col border-r border-eft-border overflow-y-auto rounded-none">
-
-		<!-- Month nav -->
-		<div class="flex items-center justify-between border-b border-eft-border px-4 py-3">
-			<button onclick={prevMonth} class="px-2 py-1 text-lg text-eft-muted transition-colors hover:text-eft-text">‹</button>
-			<span class="text-xs font-bold uppercase tracking-widest text-eft-text">
-				{MONTH_NAMES[viewMonth]} {viewYear}
-			</span>
-			<button onclick={nextMonth} class="px-2 py-1 text-lg text-eft-muted transition-colors hover:text-eft-text">›</button>
-		</div>
-
-		<!-- Mini calendar -->
-		<div class="px-4 py-3 border-b border-eft-border">
-			<div class="grid grid-cols-7 mb-1">
-				{#each DAY_NAMES as d}
-					<div class="py-1 text-center text-xs font-bold uppercase tracking-wider text-eft-muted">{d}</div>
-				{/each}
-			</div>
-			<div class="grid grid-cols-7">
-				{#each calendarDays() as cell (cell.iso)}
-					{@const hasPosts = cell.iso >= todayIso && !!(postsByDate[cell.iso]?.length)}
-					<button
-						onclick={() => { if (hasPosts) selectPost(postsByDate[cell.iso]); }}
-						class="flex flex-col items-center py-0.5 rounded transition-colors
-							{!cell.inMonth ? 'opacity-20' : ''}
-							{hasPosts ? 'hover:bg-eft-elevated cursor-pointer' : 'cursor-default'}"
-					>
-						<span class="text-xs w-6 h-6 flex items-center justify-center rounded-full
-							{isToday(cell.iso) ? 'bg-eft-gold text-black font-bold' : 'text-eft-muted'}
-							{selected?.parsedDate === cell.iso && !isToday(cell.iso) ? 'ring-1 ring-eft-gold' : ''}"
-						>{cell.date.getDate()}</span>
-						{#if hasPosts && cell.inMonth}
-							<div class="flex gap-px mt-0.5 h-1.5 justify-center">
-								{#each (postsByDate[cell.iso] ?? []).slice(0, 3) as post}
-									<span class="h-1.5 w-1.5 rounded-full {DOT_COLORS[post.source] ?? 'bg-eft-gold'}"></span>
-								{/each}
-							</div>
-						{:else}
-							<div class="h-1.5"></div>
-						{/if}
-					</button>
-				{/each}
-			</div>
-		</div>
-
-		<Separator />
+	<div class="flex w-64 shrink-0 flex-col border-r border-eft-border overflow-hidden">
 
 		<!-- Upcoming agenda -->
 		<div class="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4">
@@ -603,24 +696,29 @@
 			{/each}
 		</div>
 
-		<!-- Club filters -->
-		<div class="border-t border-eft-border px-4 py-3">
-			<p class="text-xs uppercase tracking-widest text-eft-muted mb-2">Клубы</p>
-			<div class="flex flex-col gap-1">
-				{#each ([['all', 'Все клубы', ''] as const, ['cqb', 'CQB Club', 'bg-eft-gold'] as const, ['strikeball', 'Клуб Барс', 'bg-sky-400'] as const, ['salamander', 'Клуб Ящер', 'bg-emerald-400'] as const, ['bsg', 'BSG', 'bg-rose-400'] as const]) as [val, label, dot]}
-					{@const isActive = val === 'all' ? selectedSources.size === 0 : selectedSources.has(val)}
-					<Button
-						onclick={() => { if (val === 'all') { selectedSources = new Set(); } else { toggleSource(val); } selected = null; }}
-						variant={isActive ? 'active' : 'ghost'}
-						class="justify-start gap-2 w-full"
+		<!-- Club filters — chip toggles -->
+		<div class="border-t border-eft-border px-4 py-3 shrink-0">
+			<p class="text-[10px] uppercase tracking-widest text-eft-muted mb-2">Клубы</p>
+			<div class="flex flex-wrap gap-1.5">
+				<button
+					onclick={() => { selectedSources = new Set(); selected = null; }}
+					class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors
+						{selectedSources.size === 0
+							? 'border-transparent bg-eft-elevated text-eft-text'
+							: 'border-eft-border/50 text-eft-muted/60 hover:border-eft-border hover:text-eft-muted'}"
+				>Все</button>
+				{#each (['cqb', 'strikeball', 'salamander', 'bsg'] as const) as val}
+					{@const active = selectedSources.has(val)}
+					<button
+						onclick={() => { toggleSource(val); selected = null; }}
+						class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors
+							{active
+								? `border-transparent ${SOURCE_BG[val]}`
+								: 'border-eft-border/50 text-eft-muted/60 hover:border-eft-border hover:text-eft-muted'}"
 					>
-						{#if dot}
-							<span class="h-2.5 w-2.5 shrink-0 rounded-full {dot}"></span>
-						{:else}
-							<span class="h-2.5 w-2.5 shrink-0 rounded-full border border-eft-border"></span>
-						{/if}
-						{label}
-					</Button>
+						<span class="w-1.5 h-1.5 rounded-full {DOT_COLORS[val]}"></span>
+						{SOURCE_LABELS[val]}
+					</button>
 				{/each}
 			</div>
 		</div>
@@ -631,15 +729,13 @@
 
 		<!-- Header -->
 		<div class="shrink-0 flex items-center justify-between">
-			<h2 class="text-xl font-bold uppercase tracking-widest text-eft-text">
-				{MONTH_NAMES[viewMonth]} <span class="text-eft-muted font-normal">{viewYear}</span>
+			<h2 class="text-3xl font-bold text-eft-text leading-none">
+				{MONTH_NAMES[viewMonth]}<span class="font-normal text-eft-muted"> {viewYear} г.</span>
 			</h2>
-			<div class="flex items-center gap-2">
-				<Button onclick={() => { viewYear = today.getFullYear(); viewMonth = today.getMonth(); selected = null; }}>Сегодня</Button>
-				<div class="flex border border-eft-border">
-					<Button onclick={prevMonth} variant="ghost" size="sm">‹</Button>
-					<Button onclick={nextMonth} variant="ghost" size="sm">›</Button>
-				</div>
+			<div class="flex items-center divide-x divide-eft-border border border-eft-border rounded-lg overflow-hidden">
+				<button onclick={prevMonth} class="px-3 py-1.5 text-base text-eft-muted hover:bg-eft-elevated transition-colors">‹</button>
+				<button onclick={() => { viewYear = today.getFullYear(); viewMonth = today.getMonth(); selected = null; scrollToMonth(today.getFullYear(), today.getMonth()); }} class="px-4 py-1.5 text-sm text-eft-text hover:bg-eft-elevated transition-colors">Сегодня</button>
+				<button onclick={nextMonth} class="px-3 py-1.5 text-base text-eft-muted hover:bg-eft-elevated transition-colors">›</button>
 			</div>
 		</div>
 
@@ -664,116 +760,188 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="flex flex-col min-h-0 flex-1 overflow-y-auto">
-				<div class="grid grid-cols-7 border border-b-0 border-eft-border shrink-0">
-					{#each DAY_NAMES as d}
-						<div class="py-2 text-center text-xs font-bold uppercase tracking-widest text-eft-muted
-							{d === 'Вс' ? 'text-rose-400/70' : ''}">{d}</div>
-					{/each}
-				</div>
-
-				<div class="shrink-0 overflow-hidden rounded-b-xl border border-eft-border grid grid-cols-7" style="grid-template-rows: repeat(6, minmax(5rem, 1fr))">
-					{#each calendarDays() as cell (cell.iso)}
-						{@const posts = cell.iso >= todayIso ? postsByDate[cell.iso] : undefined}
-						{@const w = weather[cell.iso]}
-						{@const isSelected = !!selected && selected.parsedDate === cell.iso}
-						<button
-							onclick={() => selectPost(posts)}
-							class="relative flex flex-col overflow-hidden border-r border-b border-eft-border bg-eft-bg p-2 text-left transition-colors
-								{!cell.inMonth ? 'opacity-30' : ''}
-								{posts?.length ? 'cursor-pointer hover:bg-eft-elevated' : 'cursor-default'}
-								{isSelected ? 'bg-eft-elevated ring-1 ring-inset ring-eft-gold' : ''}
-							"
-						>
-							<div class="flex items-start justify-between w-full mb-1">
-								<span class="text-xs w-6 h-6 flex items-center justify-center rounded-full shrink-0
-									{isToday(cell.iso) ? 'bg-eft-gold text-black font-bold' : 'text-eft-muted'}"
-								>{cell.date.getDate()}</span>
-								{#if w && cell.inMonth}
-									<div class="flex items-center gap-1 text-xs text-eft-muted/80 leading-none pt-0.5">
-										<span>{weatherIcon(w.code)}</span>
-										<span class="text-xs">{w.tempMax}°/{w.tempMin}°</span>
-									</div>
-								{/if}
-							</div>
-
-							{#if posts?.length}
-								<div class="flex flex-col gap-0.5 w-full overflow-hidden">
-									{#each posts.slice(0, 2) as post}
-										<span class="block w-full truncate rounded px-1.5 py-0.5 text-xs leading-snug {SOURCE_BG[post.source] ?? 'bg-eft-gold/20 text-eft-gold'}">
-											{post.title ?? SOURCE_LABELS[post.source]}
-										</span>
-									{/each}
-									{#if posts.length > 2}
-										<span class="text-xs text-eft-muted pl-1">+{posts.length - 2} ещё</span>
-									{/if}
-								</div>
-							{/if}
-						</button>
-					{/each}
-				</div>
+			<!-- Day-of-week header — fixed above scroll -->
+			<div class="grid grid-cols-7 border border-b-0 border-eft-border shrink-0 bg-eft-bg">
+				{#each DAY_NAMES as d}
+					<div class="py-2 text-center text-xs font-bold uppercase tracking-widest
+						{d === 'Вс' ? 'text-rose-400/70' : 'text-eft-muted'}">{d}</div>
+				{/each}
 			</div>
 
-			{#if selected}
-				{@const dayPosts = selected.parsedDate ? (postsByDate[selected.parsedDate] ?? []) : []}
-				<div class="shrink-0 max-h-64 flex flex-col overflow-hidden rounded-xl border border-eft-border bg-eft-surface">
-					<div class="flex shrink-0 border-b border-eft-border">
-						{#if dayPosts.length > 1}
-							{#each dayPosts as post}
-								<button
-									onclick={() => selected = post}
-									class="px-4 py-2 text-xs uppercase tracking-wider transition-colors
-										{selected === post ? 'text-eft-gold border-b-2 border-eft-gold -mb-px bg-eft-elevated' : 'text-eft-muted hover:text-eft-text'}"
-								>{SOURCE_LABELS[post.source]}</button>
-							{/each}
-						{:else}
-							<span class="px-4 py-2 text-xs uppercase tracking-wider text-eft-muted">
-								{SOURCE_LABELS[selected.source]}
-							</span>
-						{/if}
-						<button
-							onclick={() => selected = null}
-							class="ml-auto px-4 py-2 text-sm text-eft-muted hover:text-eft-text transition-colors"
-						>✕</button>
-					</div>
+			<!-- Continuous-scroll months -->
+			<div
+				class="flex-1 min-h-0 overflow-y-auto border border-t-0 border-eft-border rounded-b-xl"
+				bind:this={calendarScrollEl}
+			>
+				<!-- Top sentinel — triggers prepend of prev month -->
+				<div bind:this={topSentinel}></div>
 
-					<a
-						href={selected.url}
-						target="_blank"
-						rel="noopener noreferrer"
-						data-sveltekit-preload-data="false"
-						class="group flex gap-4 overflow-y-auto p-4 hover:bg-eft-elevated transition-colors"
-					>
-						<div class="flex flex-col gap-2 flex-1 min-w-0">
-							<div class="flex items-center gap-3 flex-wrap">
-								{#if selected.gameDate}
-									<span class="text-sm text-eft-gold">📅 {selected.gameDate}</span>
-								{/if}
-								{#if selected.parsedDate && weather[selected.parsedDate]}
-									{@const w = weather[selected.parsedDate]}
-									<span class="text-sm text-eft-muted">
-										{weatherIcon(w.code)} {w.tempMax}°/{w.tempMin}°
-									</span>
-								{/if}
-							</div>
-							{#if selected.title}
-								<p class="text-sm font-semibold text-eft-text group-hover:text-eft-gold transition-colors">
-									{selected.title}
-								</p>
-							{/if}
-							{#if selected.text}
-								<p class="text-xs leading-relaxed text-eft-muted whitespace-pre-line">
-									{selected.text}
-								</p>
-							{/if}
+				{#each renderedMonths as { year, month } (`${year}-${month}`)}
+					<div data-month-section data-year={year} data-month={month}>
+						<!-- Month label — sticky at top, flies through day headers on scroll -->
+						<div
+							class="sticky top-0 z-10 flex items-center gap-2 px-4 py-2 bg-eft-bg/95 backdrop-blur border-b border-eft-border"
+							data-month-label
+						>
+							<span class="text-sm font-semibold uppercase tracking-widest text-eft-muted">{MONTH_NAMES[month]} {year}</span>
 						</div>
-						<span class="shrink-0 text-xs text-eft-muted/40 self-start pt-1">vk.com ↗</span>
-					</a>
-				</div>
-			{/if}
+
+						<!-- Week grid — no trailing next-month cells -->
+						<div class="grid grid-cols-7" style="grid-auto-rows: 8rem">
+							{#each buildMonthCells(year, month) as cell, i (`${year}-${month}-${i}`)}
+								{#if cell.iso === ''}
+									<div class="border-r border-b border-eft-border bg-eft-bg/40"></div>
+								{:else}
+									{@const posts = cell.iso >= todayIso ? postsByDate[cell.iso] : undefined}
+									{@const w = weather[cell.iso]}
+									{@const isSelected = !!selected && selected.parsedDate === cell.iso}
+									<button
+										onclick={() => selectPost(posts)}
+										class="relative flex flex-col overflow-hidden border-r border-b border-eft-border bg-eft-bg p-2 text-left transition-colors
+											{!cell.inMonth ? 'opacity-30' : ''}
+											{posts?.length ? 'cursor-pointer hover:bg-eft-elevated' : 'cursor-default'}
+											{isSelected ? 'bg-eft-elevated ring-1 ring-inset ring-eft-gold' : ''}"
+									>
+										<div class="flex items-start justify-between w-full mb-1">
+											<span class="text-xs w-6 h-6 flex items-center justify-center rounded-full shrink-0
+												{isToday(cell.iso) ? 'bg-eft-gold text-black font-bold' : 'text-eft-muted'}"
+											>{cell.date.getDate()}</span>
+											{#if w && cell.inMonth}
+												<div class="flex items-center gap-1 text-xs text-eft-muted/80 leading-none pt-0.5">
+													<span class="text-base leading-none">{weatherIcon(w.code)}</span>
+													<span class="text-xs">{w.tempMax}°/{w.tempMin}°</span>
+												</div>
+											{/if}
+										</div>
+
+										{#if posts?.length}
+											<div class="flex flex-col gap-0.5 w-full overflow-hidden">
+												{#each posts.slice(0, 3) as post}
+													<span class="block w-full truncate rounded px-1.5 py-0.5 text-xs leading-snug {SOURCE_BG[post.source] ?? 'bg-eft-gold/20 text-eft-gold'}">
+														{post.title ?? SOURCE_LABELS[post.source]}
+													</span>
+												{/each}
+												{#if posts.length > 3}
+													<span class="text-xs text-eft-muted pl-1">+{posts.length - 3} ещё</span>
+												{/if}
+											</div>
+										{/if}
+									</button>
+								{/if}
+							{/each}
+						</div>
+					</div>
+				{/each}
+
+				<!-- Bottom sentinel — triggers append of next month -->
+				<div bind:this={bottomSentinel}></div>
+			</div>
+
 		{/if}
 	</div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     DESKTOP: Event detail modal
+     ═══════════════════════════════════════════════════════════ -->
+{#if selected}
+	{@const dayPosts = selected.parsedDate ? (postsByDate[selected.parsedDate] ?? []) : []}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+		transition:fade={{ duration: 180 }}
+		onclick={() => (selected = null)}
+	>
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div
+			class="relative mx-6 flex w-full max-w-2xl max-h-[80vh] flex-col rounded-2xl border border-eft-border bg-eft-surface shadow-2xl"
+			transition:fly={{ y: 16, duration: 220 }}
+			onclick={(e) => e.stopPropagation()}
+		>
+			<!-- Tab header + close -->
+			<div class="flex shrink-0 items-center border-b border-eft-border">
+				{#if dayPosts.length > 1}
+					{#each dayPosts as post}
+						<button
+							onclick={() => (selected = post)}
+							class="flex items-center gap-2 px-4 py-3 text-xs font-medium uppercase tracking-wider transition-colors
+								{selected === post
+									? 'text-eft-gold border-b-2 border-eft-gold -mb-px bg-eft-elevated'
+									: 'text-eft-muted hover:text-eft-text'}"
+						>
+							<span class="w-2 h-2 rounded-full {DOT_COLORS[post.source] ?? 'bg-eft-gold'}"></span>
+							{SOURCE_LABELS[post.source]}
+						</button>
+					{/each}
+				{:else}
+					<span class="flex items-center gap-2 px-4 py-3 text-xs uppercase tracking-wider text-eft-muted">
+						<span class="w-2 h-2 rounded-full {DOT_COLORS[selected.source] ?? 'bg-eft-gold'}"></span>
+						{SOURCE_LABELS[selected.source]}
+					</span>
+				{/if}
+				<button
+					onclick={() => (selected = null)}
+					class="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-eft-muted transition-colors hover:bg-eft-elevated hover:text-eft-text mr-2"
+					aria-label="Закрыть"
+				>✕</button>
+			</div>
+
+			<!-- Scrollable content -->
+			<div class="flex-1 min-h-0 overflow-y-auto">
+				<div class="p-6 space-y-4">
+					<!-- Date + weather row -->
+					<div class="flex items-center gap-3 flex-wrap">
+						{#if selected.gameDate}
+							<span class="text-sm text-eft-gold">📅 {selected.gameDate}</span>
+						{/if}
+						{#if selected.parsedDate && weather[selected.parsedDate]}
+							{@const w = weather[selected.parsedDate]}
+							<span class="flex items-center gap-1.5 text-sm text-eft-muted">
+								<span class="text-xl leading-none">{weatherIcon(w.code)}</span>
+								{w.tempMax}°/{w.tempMin}°
+							</span>
+						{/if}
+					</div>
+
+					<!-- Club badge -->
+					<div>
+						<span class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider
+							{SOURCE_BG[selected.source] ?? 'bg-eft-gold/20 text-eft-gold'}">
+							<span class="w-2 h-2 rounded-full {DOT_COLORS[selected.source] ?? 'bg-eft-gold'}"></span>
+							{SOURCE_LABELS[selected.source] ?? selected.source}
+						</span>
+					</div>
+
+					<!-- Title -->
+					{#if selected.title}
+						<h3 class="text-base font-semibold text-eft-text leading-snug">{selected.title}</h3>
+					{/if}
+
+					<!-- Full text -->
+					{#if selected.text}
+						<p class="text-sm text-eft-muted leading-relaxed whitespace-pre-line">{selected.text}</p>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Footer: VK link -->
+			<div class="shrink-0 border-t border-eft-border px-6 py-4">
+				<a
+					href={selected.url}
+					target="_blank"
+					rel="noopener noreferrer"
+					data-sveltekit-preload-data="false"
+					class="flex w-full items-center justify-center gap-2.5 rounded-full border border-eft-border bg-eft-elevated py-3 text-sm font-semibold text-eft-text transition-colors hover:border-eft-gold hover:text-eft-gold"
+				>
+					Открыть во ВКонтакте
+					<svg class="w-3.5 h-3.5 opacity-60" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M7 3H3v10h10v-4M9 3h4v4M13 3L7 9"/>
+					</svg>
+				</a>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <!-- ═══════════════════════════════════════════════════════════
      MOBILE: fixed bottom gradient
